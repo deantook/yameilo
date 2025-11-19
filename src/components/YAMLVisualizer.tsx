@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import * as yaml from 'js-yaml'
 import YAMLForm, { YAMLFormHandle } from './YAMLForm'
-import YAMLEditor from './YAMLEditor'
-import { FileIcon, SortIcon, SaveIcon, ReloadIcon, UploadIcon, ChevronDownIcon, ChevronRightIcon } from './Icons'
+import YAMLEditor, { YAMLEditorHandle } from './YAMLEditor'
+import { FileIcon, SortIcon, SaveIcon, ReloadIcon, UploadIcon, ChevronDownIcon, ChevronRightIcon, FormatIcon } from './Icons'
 import './YAMLVisualizer.css'
 
 interface YAMLVisualizerProps {
@@ -27,6 +27,7 @@ export default function YAMLVisualizer({
   const isUpdatingFromEditor = useRef(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const formRef = useRef<YAMLFormHandle | null>(null)
+  const editorRef = useRef<YAMLEditorHandle | null>(null)
 
   // 将数据转换为 YAML 文本
   const dataToYaml = useCallback((data: any): string => {
@@ -201,6 +202,14 @@ export default function YAMLVisualizer({
               <SortIcon size={14} />
               <span>排序</span>
             </button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => editorRef.current?.format()}
+              title="格式化 YAML 代码"
+            >
+              <FormatIcon size={14} />
+              <span>格式化</span>
+            </button>
             <button className="btn btn-primary" onClick={handleSave}>
               <SaveIcon size={14} />
               <span>保存</span>
@@ -238,6 +247,7 @@ export default function YAMLVisualizer({
         <div className="visualizer-content">
           <div className="editor-panel">
             <YAMLEditor
+              ref={editorRef}
               value={yamlText}
               onChange={handleEditorChange}
               onParseError={setParseError}
