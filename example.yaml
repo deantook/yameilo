@@ -1,0 +1,37 @@
+# 示例配置文件
+app:
+  name: "YAML 可视化工具"
+  version: "1.0.0"
+  debug: false
+  
+server:
+  host: "localhost"
+  port: 3000
+  ssl:
+    enabled: true
+    cert: "/path/to/cert.pem"
+    key: "/path/to/key.pem"
+
+database:
+  type: "postgresql"
+  host: "localhost"
+  port: 5432
+  name: "mydb"
+  credentials:
+    username: "admin"
+    password: "secret123"
+
+features:
+  - "feature1"
+  - "feature2"
+  - "feature3"
+
+logging:
+  level: "info"
+  format: "json"
+  outputs:
+    - type: "file"
+      path: "/var/log/app.log"
+    - type: "console"
+      enabled: true
+

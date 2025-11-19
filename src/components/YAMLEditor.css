@@ -1,0 +1,19 @@
+.yaml-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* Monaco Editor 容器样式 */
+.yaml-editor .monaco-editor {
+  border-radius: 0;
+}
+
+.yaml-editor .monaco-editor .margin {
+  background-color: #f8f9fa;
+}
+
