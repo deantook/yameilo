@@ -17,10 +17,6 @@ function App() {
 
   return (
     <div className="app">
-      <header className="app-header">
-        <h1>YAML 可视化工具</h1>
-        <p>编辑 YAML 配置，支持表单和文本两种编辑方式</p>
-      </header>
       <main className="app-main">
         <YAMLVisualizer
           data={yamlData}
