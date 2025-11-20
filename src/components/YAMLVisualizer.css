@@ -72,7 +72,7 @@
 
 .file-name-input:focus {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.1);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .parse-error {
@@ -136,7 +136,7 @@
 
 .search-container:focus-within {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.1);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .search-icon {
@@ -220,7 +220,7 @@
 .btn-primary:hover {
   background: var(--primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(129, 140, 248, 0.4);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
 .btn-secondary {
@@ -232,7 +232,7 @@
 .btn-secondary:hover {
   background: var(--secondary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(113, 113, 122, 0.4);
+  box-shadow: 0 4px 12px rgba(100, 116, 139, 0.4);
 }
 
 .visualizer-content {

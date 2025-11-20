@@ -1,41 +1,49 @@
 :root {
-  /* 亮色主题变量 */
+  /* 亮色主题变量 - 现代清新风格 */
   --bg-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --bg-secondary: white;
-  --bg-tertiary: #f8f9fa;
-  --bg-hover: #e9ecef;
-  --text-primary: #333;
-  --text-secondary: #6c757d;
-  --text-tertiary: #999;
-  --border-color: #e9ecef;
-  --primary-color: #667eea;
-  --primary-hover: #5568d3;
-  --secondary-color: #6c757d;
-  --secondary-hover: #5a6268;
-  --error-bg: #fff5f5;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --bg-hover: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #94a3b8;
+  --border-color: #e2e8f0;
+  --primary-color: #3b82f6;
+  --primary-hover: #2563eb;
+  --secondary-color: #64748b;
+  --secondary-hover: #475569;
+  --error-bg: #fef2f2;
   --error-border: #fecaca;
-  --error-text: #dc3545;
-  --shadow: rgba(0, 0, 0, 0.1);
+  --error-text: #ef4444;
+  --shadow: rgba(15, 23, 42, 0.08);
+  --success-color: #10b981;
+  --success-hover: #059669;
+  --warning-color: #f59e0b;
+  --warning-hover: #d97706;
 }
 
 [data-theme="dark"] {
-  /* 暗色主题变量 */
-  --bg-primary: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  --bg-secondary: #1e1e2e;
-  --bg-tertiary: #252538;
-  --bg-hover: #2d2d44;
-  --text-primary: #e4e4e7;
-  --text-secondary: #a1a1aa;
-  --text-tertiary: #71717a;
-  --border-color: #3f3f46;
-  --primary-color: #818cf8;
-  --primary-hover: #6366f1;
-  --secondary-color: #71717a;
-  --secondary-hover: #52525b;
-  --error-bg: #3f1f1f;
-  --error-border: #7f1d1d;
-  --error-text: #f87171;
-  --shadow: rgba(0, 0, 0, 0.5);
+  /* 暗色主题变量 - VS Code Dark+ 风格 */
+  --bg-primary: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  --bg-secondary: #1e1e1e;
+  --bg-tertiary: #252526;
+  --bg-hover: #2d2d30;
+  --text-primary: #d4d4d4;
+  --text-secondary: #9cdcfe;
+  --text-tertiary: #858585;
+  --border-color: #3e3e42;
+  --primary-color: #4fc3f7;
+  --primary-hover: #29b6f6;
+  --secondary-color: #858585;
+  --secondary-hover: #6c6c6c;
+  --error-bg: #3a1f1f;
+  --error-border: #5a2a2a;
+  --error-text: #f48771;
+  --shadow: rgba(0, 0, 0, 0.6);
+  --success-color: #4ade80;
+  --success-hover: #22c55e;
+  --warning-color: #fbbf24;
+  --warning-hover: #f59e0b;
 }
 
 * {
