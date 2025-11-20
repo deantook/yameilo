@@ -1,6 +1,6 @@
 import { useRef, useEffect, forwardRef, useImperativeHandle } from 'react'
 import Editor from '@monaco-editor/react'
-import * as yaml from 'js-yaml'
+import * as YAML from 'yaml'
 import type { OnChange, OnMount } from '@monaco-editor/react'
 import './YAMLEditor.css'
 
@@ -58,7 +58,7 @@ const YAMLEditor = forwardRef<YAMLEditorHandle, YAMLEditorProps>(
       })
     }
 
-    // 格式化 YAML 内容
+    // 格式化 YAML 内容（保留注释）
     const formatYAML = () => {
       if (!editorRef.current) return
 
@@ -66,19 +66,12 @@ const YAMLEditor = forwardRef<YAMLEditorHandle, YAMLEditorProps>(
       if (!currentValue || currentValue.trim() === '') return
 
       try {
-        // 解析 YAML
-        const parsed = yaml.load(currentValue)
-        if (parsed === undefined) return
+        // 使用 parseDocument 以保留注释
+        const doc = YAML.parseDocument(currentValue)
+        if (doc.contents === null) return
 
-        // 重新格式化为标准 YAML
-        const formatted = yaml.dump(parsed, {
-          indent: 2,
-          lineWidth: -1,
-          quotingType: '"',
-          forceQuotes: false,
-          noRefs: true,
-          sortKeys: false,
-        })
+        // 转换为字符串（保留注释和格式）
+        const formatted = doc.toString()
 
         // 更新编辑器内容
         isInternalUpdate.current = true
@@ -111,7 +104,7 @@ const YAMLEditor = forwardRef<YAMLEditorHandle, YAMLEditorProps>(
       // 验证 YAML 格式
       if (onParseError) {
         try {
-          yaml.load(val)
+          YAML.parseDocument(val)
           onParseError('')
         } catch (error) {
           onParseError(error instanceof Error ? error.message : 'YAML 解析错误')

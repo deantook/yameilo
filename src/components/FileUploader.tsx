@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import * as yaml from 'js-yaml'
+import * as YAML from 'yaml'
 import { UploadIcon } from './Icons'
 import './FileUploader.css'
 
@@ -16,7 +16,8 @@ export default function FileUploader({ onFileLoad }: FileUploaderProps) {
 
     try {
       const text = await file.text()
-      const data = yaml.load(text)
+      const doc = YAML.parseDocument(text)
+      const data = doc.toJS()
       onFileLoad(data, file.name)
     } catch (error) {
       alert(`解析 YAML 文件失败: ${error instanceof Error ? error.message : '未知错误'}`)
@@ -33,7 +34,8 @@ export default function FileUploader({ onFileLoad }: FileUploaderProps) {
 
     try {
       const text = await file.text()
-      const data = yaml.load(text)
+      const doc = YAML.parseDocument(text)
+      const data = doc.toJS()
       onFileLoad(data, file.name)
     } catch (error) {
       alert(`解析 YAML 文件失败: ${error instanceof Error ? error.message : '未知错误'}`)

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import * as yaml from 'js-yaml'
+import * as YAML from 'yaml'
 import { useTheme } from '../contexts/ThemeContext'
 import YAMLForm, { YAMLFormHandle } from './YAMLForm'
 import YAMLEditor, { YAMLEditorHandle } from './YAMLEditor'
@@ -36,24 +36,155 @@ export default function YAMLVisualizer({
   const formRef = useRef<YAMLFormHandle | null>(null)
   const editorRef = useRef<YAMLEditorHandle | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const yamlDocRef = useRef<YAML.Document | null>(null) // 保存 YAML 文档以保留注释
 
-  // 将数据转换为 YAML 文本
-  const dataToYaml = useCallback((data: any): string => {
+  // 将 JavaScript 值转换为 YAML 节点
+  const valueToNode = useCallback((value: any): YAML.Node | null => {
+    try {
+      const doc = YAML.parseDocument(YAML.stringify(value, { indent: 2 }))
+      return doc.contents || null
+    } catch {
+      return null
+    }
+  }, [])
+
+  // 递归更新 YAML 节点值，保留注释
+  const updateNodeValue = useCallback((oldNode: YAML.Node | null, newValue: any): YAML.Node | null => {
+    if (newValue === null || newValue === undefined) {
+      return valueToNode(newValue)
+    }
+
+    // 如果是 Map（对象）
+    if (YAML.isMap(oldNode) && typeof newValue === 'object' && !Array.isArray(newValue)) {
+      const oldMap = oldNode as YAML.YAMLMap
+      const newMap = new YAML.YAMLMap()
+      
+      // 保留 Map 的注释
+      if (oldMap.commentBefore) newMap.commentBefore = oldMap.commentBefore
+      if (oldMap.comment) newMap.comment = oldMap.comment
+      
+      // 创建键到旧 Pair 的映射
+      const oldPairs = new Map<string, YAML.Pair>()
+      oldMap.items.forEach(pair => {
+        if (YAML.isScalar(pair.key)) {
+          const key = (pair.key as YAML.Scalar).value as string
+          oldPairs.set(key, pair)
+        }
+      })
+      
+      // 更新或添加键值对
+      Object.keys(newValue).forEach(key => {
+        const oldPair = oldPairs.get(key)
+        const oldValue = (oldPair?.value as YAML.Node | undefined) || null
+        const newValueNode = updateNodeValue(oldValue, newValue[key])
+        
+        if (newValueNode) {
+          const newPair = new YAML.Pair(
+            oldPair?.key || valueToNode(key) as YAML.Scalar,
+            newValueNode
+          )
+          
+          // 保留 Pair 的注释（使用类型断言，因为类型定义可能不完整）
+          if (oldPair) {
+            const oldPairAny = oldPair as any
+            const newPairAny = newPair as any
+            if (oldPairAny.commentBefore) newPairAny.commentBefore = oldPairAny.commentBefore
+            if (oldPairAny.comment) newPairAny.comment = oldPairAny.comment
+            // 保留 key 的注释
+            if (oldPair.key && YAML.isScalar(oldPair.key)) {
+              const oldKey = oldPair.key as YAML.Scalar
+              const oldKeyAny = oldKey as any
+              if (YAML.isScalar(newPair.key)) {
+                const newKeyAny = newPair.key as any
+                if (oldKeyAny.commentBefore) newKeyAny.commentBefore = oldKeyAny.commentBefore
+                if (oldKeyAny.comment) newKeyAny.comment = oldKeyAny.comment
+              }
+            }
+          }
+          
+          newMap.items.push(newPair)
+        }
+      })
+      
+      return newMap
+    }
+    
+    // 如果是 Seq（数组）
+    if (YAML.isSeq(oldNode) && Array.isArray(newValue)) {
+      const oldSeq = oldNode as YAML.YAMLSeq
+      const newSeq = new YAML.YAMLSeq()
+      
+      // 保留 Seq 的注释
+      if (oldSeq.commentBefore) newSeq.commentBefore = oldSeq.commentBefore
+      if (oldSeq.comment) newSeq.comment = oldSeq.comment
+      
+      // 更新数组项
+      newValue.forEach((item, index) => {
+        const oldItem = (oldSeq.items[index] as YAML.Node | undefined) || null
+        const newItem = updateNodeValue(oldItem, item)
+        
+        if (newItem) {
+          // 保留项的注释（使用类型断言）
+          if (oldItem) {
+            const oldItemAny = oldItem as any
+            const newItemAny = newItem as any
+            if (oldItemAny.commentBefore) newItemAny.commentBefore = oldItemAny.commentBefore
+            if (oldItemAny.comment) newItemAny.comment = oldItemAny.comment
+          }
+          
+          newSeq.items.push(newItem)
+        }
+      })
+      
+      return newSeq
+    }
+    
+    // 如果是 Scalar（标量值）或其他类型
+    if (YAML.isScalar(oldNode)) {
+      const oldScalar = oldNode as YAML.Scalar
+      const newScalar = valueToNode(newValue) as YAML.Scalar
+      
+      if (newScalar && YAML.isScalar(newScalar)) {
+        // 保留标量的注释
+        if (oldScalar.commentBefore) newScalar.commentBefore = oldScalar.commentBefore
+        if (oldScalar.comment) newScalar.comment = oldScalar.comment
+        return newScalar
+      }
+    }
+    
+    // 默认情况：创建新节点
+    return valueToNode(newValue)
+  }, [valueToNode])
+
+  // 将数据转换为 YAML 文本，保留注释
+  const dataToYaml = useCallback((data: any, preserveComments: boolean = false): string => {
     try {
       // 如果是空对象，返回空字符串
       if (data && typeof data === 'object' && !Array.isArray(data) && Object.keys(data).length === 0) {
         return ''
       }
-      return yaml.dump(data, {
-        indent: 2,
-        lineWidth: -1,
-        quotingType: '"',
-        forceQuotes: false,
-      })
+      
+      // 如果要求保留注释且存在文档，尝试更新文档内容
+      if (preserveComments && yamlDocRef.current) {
+        try {
+          // 使用递归更新来保留注释
+          const updatedContents = updateNodeValue(yamlDocRef.current.contents, data)
+          if (updatedContents) {
+            yamlDocRef.current.contents = updatedContents
+            return yamlDocRef.current.toString()
+          }
+        } catch (error) {
+          // 如果更新失败，回退到普通序列化
+          console.warn('Failed to preserve comments, using standard serialization:', error)
+        }
+      }
+      
+      // 普通序列化（不保留注释）
+      return YAML.stringify(data, { indent: 2 })
     } catch (error) {
       return yamlText || ''
     }
-  }, [yamlText])
+  }, [yamlText, updateNodeValue])
 
   // 初始化 YAML 文本（仅在数据首次加载时）
   const isInitialized = useRef(false)
@@ -136,8 +267,11 @@ export default function YAMLVisualizer({
 
     try {
       const text = await file.text()
-      const parsedData = yaml.load(text)
+      // 使用 parseDocument 以保留注释
+      const doc = YAML.parseDocument(text)
+      const parsedData = doc.toJS()
       if (parsedData !== undefined) {
+        yamlDocRef.current = doc // 保存文档以保留注释
         onFileLoad(parsedData, file.name)
         setYamlText(text)
         setParseError('')
@@ -148,7 +282,7 @@ export default function YAMLVisualizer({
     }
   }, [onFileLoad])
 
-  // 当表单数据变化时，更新编辑器
+  // 当表单数据变化时，更新编辑器（保留注释）
   useEffect(() => {
     if (!isUpdatingFromEditor.current && data !== null && data !== undefined) {
       // 检查是否有活动的 input 元素（用户正在编辑）
@@ -162,7 +296,8 @@ export default function YAMLVisualizer({
       if (isEditingInput) {
         const timeoutId = setTimeout(() => {
           isUpdatingFromForm.current = true
-          const newYamlText = dataToYaml(data)
+          // 使用 preserveComments=true 以保留注释
+          const newYamlText = dataToYaml(data, true)
           setYamlText(newYamlText)
           setTimeout(() => {
             isUpdatingFromForm.current = false
@@ -171,7 +306,8 @@ export default function YAMLVisualizer({
         return () => clearTimeout(timeoutId)
       } else {
         isUpdatingFromForm.current = true
-        const newYamlText = dataToYaml(data)
+        // 使用 preserveComments=true 以保留注释
+        const newYamlText = dataToYaml(data, true)
         setYamlText(newYamlText)
         setTimeout(() => {
           isUpdatingFromForm.current = false
@@ -190,11 +326,15 @@ export default function YAMLVisualizer({
     try {
       // 如果文本为空或只有空白字符，设置为空对象
       if (!text || text.trim() === '') {
+        yamlDocRef.current = null
         onDataChange({})
         setParseError('')
       } else {
-        const parsed = yaml.load(text)
+        // 使用 parseDocument 以保留注释
+        const doc = YAML.parseDocument(text)
+        const parsed = doc.toJS()
         if (parsed !== undefined) {
+          yamlDocRef.current = doc // 保存文档以保留注释
           onDataChange(parsed)
           setParseError('')
         }
@@ -215,12 +355,8 @@ export default function YAMLVisualizer({
 
   const handleSave = useCallback(() => {
     try {
-      const yamlString = yaml.dump(data, {
-        indent: 2,
-        lineWidth: -1,
-        quotingType: '"',
-        forceQuotes: false,
-      })
+      // 优先使用当前编辑器中的文本（保留注释），否则序列化数据
+      const yamlString = yamlText || dataToYaml(data, true)
       const blob = new Blob([yamlString], { type: 'text/yaml' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -240,7 +376,7 @@ export default function YAMLVisualizer({
     } catch (error) {
       alert(`保存失败: ${error instanceof Error ? error.message : '未知错误'}`)
     }
-  }, [data, editingFileName])
+  }, [data, editingFileName, yamlText, dataToYaml])
 
   const sortObjectKeys = (obj: any): any => {
     if (obj === null || typeof obj !== 'object') {
