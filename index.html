@@ -10,6 +10,12 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Polyfill for global in browser environment
+      if (typeof global === 'undefined') {
+        window.global = globalThis;
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

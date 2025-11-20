@@ -1,9 +1,11 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import * as YAML from 'yaml'
+import * as TOML from '@iarna/toml'
+import { js2xml } from 'xml-js'
 import { useTheme } from '../contexts/ThemeContext'
 import YAMLForm, { YAMLFormHandle } from './YAMLForm'
 import YAMLEditor, { YAMLEditorHandle } from './YAMLEditor'
-import { FileIcon, SortIcon, SaveIcon, ReloadIcon, UploadIcon, ChevronDownIcon, ChevronRightIcon, FormatIcon, SearchIcon, CloseIcon, MoonIcon, SunIcon, GitHubIcon } from './Icons'
+import { FileIcon, SortIcon, SaveIcon, ReloadIcon, UploadIcon, ChevronDownIcon, ChevronRightIcon, FormatIcon, SearchIcon, CloseIcon, MoonIcon, SunIcon, GitHubIcon, DownloadIcon } from './Icons'
 import './YAMLVisualizer.css'
 
 interface YAMLVisualizerProps {
@@ -29,6 +31,7 @@ export default function YAMLVisualizer({
   const [matchCount, setMatchCount] = useState(0)
   const [editingFileName, setEditingFileName] = useState(fileName || '')
   const [isEditingFileName, setIsEditingFileName] = useState(false)
+  const [showExportMenu, setShowExportMenu] = useState(false)
   const fileNameInputRef = useRef<HTMLInputElement>(null)
   const isUpdatingFromForm = useRef(false)
   const isUpdatingFromEditor = useRef(false)
@@ -36,6 +39,7 @@ export default function YAMLVisualizer({
   const formRef = useRef<YAMLFormHandle | null>(null)
   const editorRef = useRef<YAMLEditorHandle | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const exportMenuRef = useRef<HTMLDivElement>(null)
   const yamlDocRef = useRef<YAML.Document | null>(null) // 保存 YAML 文档以保留注释
 
   // 将 JavaScript 值转换为 YAML 节点
@@ -378,6 +382,98 @@ export default function YAMLVisualizer({
     }
   }, [data, editingFileName, yamlText, dataToYaml])
 
+  // 导出为 JSON
+  const handleExportJSON = useCallback(() => {
+    try {
+      const jsonString = JSON.stringify(data, null, 2)
+      const blob = new Blob([jsonString], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      let exportFileName = editingFileName.trim()
+      if (!exportFileName || exportFileName === '未命名文件') {
+        exportFileName = '未命名文件.json'
+      } else {
+        exportFileName = exportFileName.replace(/\.(yaml|yml)$/i, '.json')
+      }
+      a.download = exportFileName
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      setShowExportMenu(false)
+    } catch (error) {
+      alert(`导出 JSON 失败: ${error instanceof Error ? error.message : '未知错误'}`)
+    }
+  }, [data, editingFileName])
+
+  // 导出为 TOML
+  const handleExportTOML = useCallback(() => {
+    try {
+      const tomlString = TOML.stringify(data)
+      const blob = new Blob([tomlString], { type: 'text/toml' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      let exportFileName = editingFileName.trim()
+      if (!exportFileName || exportFileName === '未命名文件') {
+        exportFileName = '未命名文件.toml'
+      } else {
+        exportFileName = exportFileName.replace(/\.(yaml|yml)$/i, '.toml')
+      }
+      a.download = exportFileName
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      setShowExportMenu(false)
+    } catch (error) {
+      alert(`导出 TOML 失败: ${error instanceof Error ? error.message : '未知错误'}`)
+    }
+  }, [data, editingFileName])
+
+  // 导出为 XML
+  const handleExportXML = useCallback(() => {
+    try {
+      const xmlString = js2xml({ root: data }, { compact: false, spaces: 2 })
+      const blob = new Blob([xmlString], { type: 'application/xml' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      let exportFileName = editingFileName.trim()
+      if (!exportFileName || exportFileName === '未命名文件') {
+        exportFileName = '未命名文件.xml'
+      } else {
+        exportFileName = exportFileName.replace(/\.(yaml|yml)$/i, '.xml')
+      }
+      a.download = exportFileName
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      setShowExportMenu(false)
+    } catch (error) {
+      alert(`导出 XML 失败: ${error instanceof Error ? error.message : '未知错误'}`)
+    }
+  }, [data, editingFileName])
+
+  // 点击外部关闭导出菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+        setShowExportMenu(false)
+      }
+    }
+
+    if (showExportMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showExportMenu])
+
   const sortObjectKeys = (obj: any): any => {
     if (obj === null || typeof obj !== 'object') {
       return obj
@@ -488,6 +584,44 @@ export default function YAMLVisualizer({
               <SaveIcon size={14} />
               <span>保存</span>
             </button>
+            
+            {/* 导出菜单 */}
+            <div className="export-menu-container" ref={exportMenuRef}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                title="导出为其他格式"
+              >
+                <DownloadIcon size={14} />
+                <span>导出</span>
+                <ChevronDownIcon size={12} />
+              </button>
+              {showExportMenu && (
+                <div className="export-menu">
+                  <button
+                    className="export-menu-item"
+                    onClick={handleExportJSON}
+                    title="导出为 JSON 格式"
+                  >
+                    <span>JSON</span>
+                  </button>
+                  <button
+                    className="export-menu-item"
+                    onClick={handleExportTOML}
+                    title="导出为 TOML 格式"
+                  >
+                    <span>TOML</span>
+                  </button>
+                  <button
+                    className="export-menu-item"
+                    onClick={handleExportXML}
+                    title="导出为 XML 格式"
+                  >
+                    <span>XML</span>
+                  </button>
+                </div>
+              )}
+            </div>
             
             {/* 编辑操作组 */}
             <button
