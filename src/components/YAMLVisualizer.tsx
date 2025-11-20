@@ -6,6 +6,7 @@ import { useTheme } from '../contexts/ThemeContext'
 import YAMLForm, { YAMLFormHandle } from './YAMLForm'
 import YAMLEditor, { YAMLEditorHandle } from './YAMLEditor'
 import StatsPanel from './StatsPanel'
+import TemplateManager from './TemplateManager'
 import { FileIcon, SortIcon, SaveIcon, ReloadIcon, UploadIcon, ChevronDownIcon, ChevronRightIcon, FormatIcon, SearchIcon, CloseIcon, MoonIcon, SunIcon, GitHubIcon, DownloadIcon, StatsIcon } from './Icons'
 import './YAMLVisualizer.css'
 
@@ -360,6 +361,16 @@ export default function YAMLVisualizer({
     onDataChange(sortedData)
   }, [data, onDataChange])
 
+  // 应用模板
+  const handleApplyTemplate = useCallback((templateData: any) => {
+    onDataChange(templateData)
+    // 更新 YAML 文本
+    const newYamlText = dataToYaml(templateData)
+    setYamlText(newYamlText)
+    setParseError('')
+    isInitialized.current = false
+  }, [onDataChange, dataToYaml])
+
   const handleSave = useCallback(() => {
     try {
       // 优先使用当前编辑器中的文本（保留注释），否则序列化数据
@@ -583,6 +594,10 @@ export default function YAMLVisualizer({
               <UploadIcon size={14} />
               <span>上传文件</span>
             </button>
+            <TemplateManager
+              currentData={data}
+              onApplyTemplate={handleApplyTemplate}
+            />
             <button className="btn btn-primary" onClick={handleSave}>
               <SaveIcon size={14} />
               <span>保存</span>

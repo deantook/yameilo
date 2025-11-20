@@ -1,4 +1,4 @@
-# YAML 可视化工具 (Yameilo)
+# YAMEILO YAML Visualizer (Yameilo)
 
 一个功能强大的现代化 YAML 配置文件可视化编辑器，支持双面板编辑、表单式操作和智能排序。
 
