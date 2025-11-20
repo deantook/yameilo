@@ -1,11 +1,13 @@
 import { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
-import { ChevronDownIcon, ChevronRightIcon, DeleteIcon, PlusIcon } from './Icons'
+import { ChevronDownIcon, ChevronRightIcon, DeleteIcon, PlusIcon, DragHandleIcon } from './Icons'
 import './YAMLForm.css'
 
 interface YAMLFormProps {
   data: any
   onChange: (data: any) => void
   path?: string
+  expanded?: Set<string>
+  onExpandedChange?: (expanded: Set<string>) => void
 }
 
 export interface YAMLFormHandle {
@@ -13,14 +15,31 @@ export interface YAMLFormHandle {
   collapseAll: () => void
 }
 
-const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, path = '' }, ref) => {
-  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, path = '', expanded: expandedProp, onExpandedChange }, ref) => {
+  // 如果提供了 expanded prop，使用它；否则使用本地状态（用于嵌套组件）
+  const [localExpanded, setLocalExpanded] = useState<Set<string>>(new Set())
+  const expanded = expandedProp !== undefined ? expandedProp : localExpanded
+  
+  // 统一的 setExpanded 函数，处理两种情况
+  const setExpanded = useCallback((value: Set<string> | ((prev: Set<string>) => Set<string>)) => {
+    if (onExpandedChange) {
+      // 如果提供了 onExpandedChange，直接调用
+      const newValue = typeof value === 'function' ? value(expanded) : value
+      onExpandedChange(newValue)
+    } else {
+      // 否则使用本地状态更新
+      setLocalExpanded(value)
+    }
+  }, [onExpandedChange, expanded])
   const [showAddMenuArray, setShowAddMenuArray] = useState(false)
   const [showAddMenuObject, setShowAddMenuObject] = useState(false)
   const [showTypeMenu, setShowTypeMenu] = useState<Set<string>>(new Set())
   const addMenuArrayRef = useRef<HTMLDivElement>(null)
   const addMenuObjectRef = useRef<HTMLDivElement>(null)
   const typeMenuRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+  const keyInputRefs = useRef<Map<string, HTMLInputElement>>(new Map())
+  const [draggedIndex, setDraggedIndex] = useState<number | string | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | string | null>(null)
 
   // 点击外部关闭数组菜单
   useEffect(() => {
@@ -150,18 +169,20 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
   }, [getValueType])
 
   const toggleExpand = useCallback((key: string) => {
-    setExpanded(prev => {
+    // 构建完整的路径key
+    const fullKey = path ? `${path}.${key}` : key
+    setExpanded((prev: Set<string>) => {
       const next = new Set(prev)
-      if (next.has(key)) {
-        next.delete(key)
+      if (next.has(fullKey)) {
+        next.delete(fullKey)
       } else {
-        next.add(key)
+        next.add(fullKey)
       }
       return next
     })
-  }, [])
+  }, [path, setExpanded])
 
-  // 递归收集所有可展开的 key（使用相对路径）
+  // 递归收集所有可展开的 key（使用完整路径，从根路径开始）
   const collectExpandableKeys = useCallback((obj: any, prefix: string = '', keys: Set<string> = new Set()): Set<string> => {
     if (Array.isArray(obj)) {
       obj.forEach((item, index) => {
@@ -193,13 +214,13 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
     if (path) return // 只在顶层执行
     const allKeys = collectExpandableKeys(data, '')
     setExpanded(allKeys)
-  }, [data, path, collectExpandableKeys])
+  }, [data, path, collectExpandableKeys, setExpanded])
 
   // 全部折叠（只在顶层调用）
   const collapseAll = useCallback(() => {
     if (path) return // 只在顶层执行
     setExpanded(new Set())
-  }, [path])
+  }, [path, setExpanded])
 
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
@@ -373,6 +394,101 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
     [data, onChange]
   )
 
+  // 拖拽排序 - 数组
+  const handleArrayDragStart = useCallback((e: React.DragEvent, index: number) => {
+    e.stopPropagation()
+    setDraggedIndex(index)
+  }, [])
+
+  const handleArrayDragOver = useCallback((e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (draggedIndex !== null && draggedIndex !== index) {
+      setDragOverIndex(index)
+    }
+  }, [draggedIndex])
+
+  const handleArrayDragEnd = useCallback(() => {
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+  }, [])
+
+  const handleArrayDrop = useCallback((e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null)
+      setDragOverIndex(null)
+      return
+    }
+
+    const newData = [...data]
+    const draggedItem = newData[draggedIndex as number]
+    newData.splice(draggedIndex as number, 1)
+    newData.splice(dropIndex, 0, draggedItem)
+    onChange(newData)
+    
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+  }, [data, draggedIndex, onChange])
+
+  // 拖拽排序 - 对象
+  const handleObjectDragStart = useCallback((e: React.DragEvent, key: string) => {
+    e.stopPropagation()
+    setDraggedIndex(key)
+  }, [])
+
+  const handleObjectDragOver = useCallback((e: React.DragEvent, key: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (draggedIndex !== null && draggedIndex !== key) {
+      setDragOverIndex(key)
+    }
+  }, [draggedIndex])
+
+  const handleObjectDragEnd = useCallback(() => {
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+  }, [])
+
+  const handleObjectDrop = useCallback((e: React.DragEvent, dropKey: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (draggedIndex === null || draggedIndex === dropKey) {
+      setDraggedIndex(null)
+      setDragOverIndex(null)
+      return
+    }
+
+    const keys = Object.keys(data)
+    const draggedKey = draggedIndex as string
+    const draggedIndexPos = keys.indexOf(draggedKey)
+    const dropIndexPos = keys.indexOf(dropKey)
+
+    if (draggedIndexPos === -1 || dropIndexPos === -1) {
+      setDraggedIndex(null)
+      setDragOverIndex(null)
+      return
+    }
+
+    // 创建新的有序对象
+    const newData: any = {}
+    const reorderedKeys = [...keys]
+    reorderedKeys.splice(draggedIndexPos, 1)
+    reorderedKeys.splice(dropIndexPos, 0, draggedKey)
+
+    reorderedKeys.forEach(key => {
+      newData[key] = data[key]
+    })
+
+    onChange(newData)
+    
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+  }, [data, draggedIndex, onChange])
+
   if (data === null || data === undefined) {
     return (
       <div className="yaml-form-item">
@@ -433,13 +549,30 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
       <div className="yaml-form-array">
         {data.map((item, index) => {
           const itemPath = path ? `${path}[${index}]` : `[${index}]`
-          const isExpanded = expanded.has(String(index))
+          const fullKey = path ? `${path}[${index}]` : String(index)
+          const isExpanded = expanded.has(fullKey)
           const isObject = typeof item === 'object' && item !== null && !Array.isArray(item)
           const isNestedArray = Array.isArray(item)
 
           return (
-            <div key={index} className="yaml-form-array-item">
+            <div 
+              key={index} 
+              className={`yaml-form-array-item ${draggedIndex === index ? 'dragging' : ''} ${dragOverIndex === index ? 'drag-over' : ''}`}
+              draggable
+              onDragStart={(e) => handleArrayDragStart(e, index)}
+              onDragOver={(e) => handleArrayDragOver(e, index)}
+              onDragEnd={handleArrayDragEnd}
+              onDrop={(e) => handleArrayDrop(e, index)}
+            >
               <div className="array-item-header">
+                <div 
+                  className="drag-handle"
+                  title="拖拽排序"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <DragHandleIcon size={14} />
+                </div>
                 <button
                   className="expand-btn"
                   onClick={() => toggleExpand(String(index))}
@@ -456,6 +589,8 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                     data={item}
                     onChange={value => updateValue(String(index), value)}
                     path={itemPath}
+                    expanded={expanded}
+                    onExpandedChange={setExpanded}
                   />
                 )}
                 <button
@@ -472,6 +607,8 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                     data={item}
                     onChange={value => updateValue(String(index), value)}
                     path={itemPath}
+                    expanded={expanded}
+                    onExpandedChange={setExpanded}
                   />
                 </div>
               )}
@@ -480,11 +617,11 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
         })}
         <div className="add-item-container" ref={addMenuArrayRef}>
           <button 
-            className="add-btn" 
+            className="add-btn-icon" 
             onClick={() => setShowAddMenuArray(!showAddMenuArray)}
+            title="添加项"
           >
             <PlusIcon size={14} />
-            <span>添加项</span>
           </button>
           {showAddMenuArray && (
             <div className="add-menu">
@@ -518,13 +655,30 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
       {keys.map(key => {
         const value = data[key]
         const itemPath = path ? `${path}.${key}` : key
-        const isExpanded = expanded.has(key)
+        const fullKey = path ? `${path}.${key}` : key
+        const isExpanded = expanded.has(fullKey)
         const isObject = typeof value === 'object' && value !== null && !Array.isArray(value)
         const isNestedArray = Array.isArray(value)
 
         return (
-          <div key={key} className="yaml-form-object-item">
+          <div 
+            key={key} 
+            className={`yaml-form-object-item ${draggedIndex === key ? 'dragging' : ''} ${dragOverIndex === key ? 'drag-over' : ''}`}
+            draggable
+            onDragStart={(e) => handleObjectDragStart(e, key)}
+            onDragOver={(e) => handleObjectDragOver(e, key)}
+            onDragEnd={handleObjectDragEnd}
+            onDrop={(e) => handleObjectDrop(e, key)}
+          >
             <div className="object-item-header">
+              <div 
+                className="drag-handle"
+                title="拖拽排序"
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <DragHandleIcon size={14} />
+              </div>
               <button
                 className="expand-btn"
                 onClick={() => toggleExpand(key)}
@@ -533,15 +687,34 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                 {isExpanded ? <ChevronDownIcon size={12} /> : <ChevronRightIcon size={12} />}
               </button>
               <input
+                ref={(el) => {
+                  if (el) {
+                    keyInputRefs.current.set(key, el)
+                  } else {
+                    keyInputRefs.current.delete(key)
+                  }
+                }}
                 type="text"
                 value={key}
                 onChange={e => {
                   const newKey = e.target.value
+                  const cursorPosition = e.target.selectionStart || 0
+                  
                   if (newKey && newKey !== key) {
                     const newData = { ...data }
                     newData[newKey] = newData[key]
                     delete newData[key]
                     onChange(newData)
+                    
+                    // 恢复焦点和光标位置
+                    setTimeout(() => {
+                      const inputRef = keyInputRefs.current.get(newKey)
+                      if (inputRef) {
+                        inputRef.focus()
+                        const newCursorPos = Math.min(cursorPosition, newKey.length)
+                        inputRef.setSelectionRange(newCursorPos, newCursorPos)
+                      }
+                    }, 0)
                   }
                 }}
                 className="key-input"
@@ -552,6 +725,8 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                   data={value}
                   onChange={newValue => updateValue(key, newValue)}
                   path={itemPath}
+                  expanded={expanded}
+                  onExpandedChange={setExpanded}
                 />
               )}
               <button
@@ -568,6 +743,8 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                   data={value}
                   onChange={newValue => updateValue(key, newValue)}
                   path={itemPath}
+                  expanded={expanded}
+                  onExpandedChange={setExpanded}
                 />
               </div>
             )}
@@ -576,11 +753,11 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
       })}
       <div className="add-item-container" ref={addMenuObjectRef}>
         <button 
-          className="add-btn" 
+          className="add-btn-icon" 
           onClick={() => setShowAddMenuObject(!showAddMenuObject)}
+          title="添加键值对"
         >
           <PlusIcon size={14} />
-          <span>添加键值对</span>
         </button>
         {showAddMenuObject && (
           <div className="add-menu">

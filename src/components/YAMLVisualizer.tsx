@@ -84,12 +84,32 @@ export default function YAMLVisualizer({
   // 当表单数据变化时，更新编辑器
   useEffect(() => {
     if (!isUpdatingFromEditor.current && data !== null && data !== undefined) {
-      isUpdatingFromForm.current = true
-      const newYamlText = dataToYaml(data)
-      setYamlText(newYamlText)
-      setTimeout(() => {
-        isUpdatingFromForm.current = false
-      }, 100)
+      // 检查是否有活动的 input 元素（用户正在编辑）
+      const activeElement = document.activeElement
+      const isEditingInput = activeElement && (
+        activeElement.tagName === 'INPUT' || 
+        activeElement.tagName === 'TEXTAREA'
+      )
+      
+      // 如果用户正在编辑，延迟更新编辑器
+      if (isEditingInput) {
+        const timeoutId = setTimeout(() => {
+          isUpdatingFromForm.current = true
+          const newYamlText = dataToYaml(data)
+          setYamlText(newYamlText)
+          setTimeout(() => {
+            isUpdatingFromForm.current = false
+          }, 100)
+        }, 300)
+        return () => clearTimeout(timeoutId)
+      } else {
+        isUpdatingFromForm.current = true
+        const newYamlText = dataToYaml(data)
+        setYamlText(newYamlText)
+        setTimeout(() => {
+          isUpdatingFromForm.current = false
+        }, 100)
+      }
     }
   }, [data, dataToYaml])
 

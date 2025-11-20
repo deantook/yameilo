@@ -121,12 +121,27 @@ const YAMLEditor = forwardRef<YAMLEditorHandle, YAMLEditorProps>(
     // 当外部 value 变化时更新编辑器（避免循环更新）
     useEffect(() => {
       if (!isInternalUpdate.current && editorRef.current) {
+        // 检查是否有活动的 input 元素（用户正在编辑表单）
+        const activeElement = document.activeElement
+        const isEditingForm = activeElement && activeElement.tagName === 'INPUT'
+        
+        // 如果用户正在编辑表单，不更新编辑器或延迟更新
+        if (isEditingForm) {
+          return
+        }
+        
         const editor = editorRef.current
         const currentValue = editor.getValue()
         if (currentValue !== value) {
+          // 保存当前光标位置
+          const position = editor.getPosition()
           editor.setValue(value)
-          // 重置光标位置到开头
-          editor.setPosition({ lineNumber: 1, column: 1 })
+          // 如果有保存的位置，恢复它；否则重置到开头
+          if (position) {
+            editor.setPosition(position)
+          } else {
+            editor.setPosition({ lineNumber: 1, column: 1 })
+          }
         }
       }
       isInternalUpdate.current = false
