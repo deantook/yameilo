@@ -3,7 +3,7 @@ import * as yaml from 'js-yaml'
 import { useTheme } from '../contexts/ThemeContext'
 import YAMLForm, { YAMLFormHandle } from './YAMLForm'
 import YAMLEditor, { YAMLEditorHandle } from './YAMLEditor'
-import { FileIcon, SortIcon, SaveIcon, ReloadIcon, UploadIcon, ChevronDownIcon, ChevronRightIcon, FormatIcon, SearchIcon, CloseIcon, MoonIcon, SunIcon } from './Icons'
+import { FileIcon, SortIcon, SaveIcon, ReloadIcon, UploadIcon, ChevronDownIcon, ChevronRightIcon, FormatIcon, SearchIcon, CloseIcon, MoonIcon, SunIcon, GitHubIcon } from './Icons'
 import './YAMLVisualizer.css'
 
 interface YAMLVisualizerProps {
@@ -27,6 +27,9 @@ export default function YAMLVisualizer({
   const [isAllExpanded, setIsAllExpanded] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [matchCount, setMatchCount] = useState(0)
+  const [editingFileName, setEditingFileName] = useState(fileName || '')
+  const [isEditingFileName, setIsEditingFileName] = useState(false)
+  const fileNameInputRef = useRef<HTMLInputElement>(null)
   const isUpdatingFromForm = useRef(false)
   const isUpdatingFromEditor = useRef(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -66,6 +69,48 @@ export default function YAMLVisualizer({
   useEffect(() => {
     setIsAllExpanded(false)
   }, [data])
+
+  // 当外部 fileName 变化时更新编辑中的文件名
+  useEffect(() => {
+    if (fileName) {
+      setEditingFileName(fileName)
+    }
+  }, [fileName])
+
+  // 处理文件名编辑
+  const handleFileNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditingFileName(e.target.value)
+  }, [])
+
+  const handleFileNameBlur = useCallback(() => {
+    setIsEditingFileName(false)
+    // 确保文件名有 .yaml 或 .yml 扩展名
+    let finalFileName = editingFileName.trim()
+    if (finalFileName && !finalFileName.match(/\.(yaml|yml)$/i)) {
+      finalFileName = finalFileName + '.yaml'
+    }
+    if (!finalFileName) {
+      finalFileName = '未命名文件.yaml'
+    }
+    setEditingFileName(finalFileName)
+  }, [editingFileName])
+
+  const handleFileNameKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur()
+    } else if (e.key === 'Escape') {
+      setEditingFileName(fileName || '未命名文件.yaml')
+      setIsEditingFileName(false)
+    }
+  }, [fileName])
+
+  const handleFileNameClick = useCallback(() => {
+    setIsEditingFileName(true)
+    setTimeout(() => {
+      fileNameInputRef.current?.focus()
+      fileNameInputRef.current?.select()
+    }, 0)
+  }, [])
 
   // 快捷键支持：Ctrl+F 聚焦搜索框
   useEffect(() => {
@@ -180,7 +225,14 @@ export default function YAMLVisualizer({
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = fileName || 'config.yaml'
+      // 使用编辑后的文件名，确保有扩展名
+      let saveFileName = editingFileName.trim()
+      if (!saveFileName || saveFileName === '未命名文件') {
+        saveFileName = '未命名文件.yaml'
+      } else if (!saveFileName.match(/\.(yaml|yml)$/i)) {
+        saveFileName = saveFileName + '.yaml'
+      }
+      a.download = saveFileName
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -188,7 +240,7 @@ export default function YAMLVisualizer({
     } catch (error) {
       alert(`保存失败: ${error instanceof Error ? error.message : '未知错误'}`)
     }
-  }, [data, fileName])
+  }, [data, editingFileName])
 
   const sortObjectKeys = (obj: any): any => {
     if (obj === null || typeof obj !== 'object') {
@@ -213,7 +265,26 @@ export default function YAMLVisualizer({
         <div className="toolbar">
           <div className="toolbar-left">
             <FileIcon className="file-icon" size={16} />
-            <span className="file-name">{fileName || '未命名文件'}</span>
+            {isEditingFileName ? (
+              <input
+                ref={fileNameInputRef}
+                type="text"
+                className="file-name-input"
+                value={editingFileName}
+                onChange={handleFileNameChange}
+                onBlur={handleFileNameBlur}
+                onKeyDown={handleFileNameKeyDown}
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <span 
+                className="file-name" 
+                onClick={handleFileNameClick}
+                title="点击编辑文件名"
+              >
+                {editingFileName || '未命名文件'}
+              </span>
+            )}
             {parseError && (
               <span className="parse-error" title={parseError}>
                 ⚠️ 解析错误
@@ -221,6 +292,18 @@ export default function YAMLVisualizer({
             )}
           </div>
           <div className="toolbar-right">
+            {/* GitHub Star 链接 */}
+            <a
+              href="https://github.com/deantook/yameilo"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="github-star-link"
+              title="给个 Star ⭐"
+            >
+              <GitHubIcon size={16} />
+              <span className="github-star-text">给个 star</span>
+            </a>
+            
             {/* 搜索框 - 最常用的功能，放在最前面 */}
             <div className="search-container">
               <SearchIcon size={14} className="search-icon" />
@@ -323,6 +406,7 @@ export default function YAMLVisualizer({
               onClick={() => {
                 isInitialized.current = false
                 setYamlText('')
+                setEditingFileName('未命名文件.yaml')
                 onReset()
               }}
               title="清空当前编辑内容"

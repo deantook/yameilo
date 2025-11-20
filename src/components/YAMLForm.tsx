@@ -700,20 +700,37 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
       )
     }
     
+    const stringValue = String(data)
+    // 对于字符串类型，根据长度决定使用 input 还是 textarea
+    const isLongString = typeof data === 'string' && stringValue.length > 50
+    const inputSize = typeof data === 'string' && !isLongString
+      ? Math.max(10, Math.min(stringValue.length + 2, 60))
+      : undefined
+    
     return (
       <div className={`yaml-form-item ${isMatch ? 'search-match' : ''}`}>
-        <input
-          type={typeof data === 'number' ? 'number' : 'text'}
-          value={String(data)}
-          onChange={e => {
-            let value: any = e.target.value
-            if (typeof data === 'number') {
-              value = parseFloat(value) || 0
-            }
-            onChange(value)
-          }}
-          className={`form-input ${isMatch && searchQuery ? 'search-match-input' : ''}`}
-        />
+        {isLongString ? (
+          <textarea
+            value={stringValue}
+            onChange={e => onChange(e.target.value)}
+            className={`form-input form-textarea ${isMatch && searchQuery ? 'search-match-input' : ''}`}
+            rows={Math.min(Math.max(3, Math.ceil(stringValue.length / 50)), 10)}
+          />
+        ) : (
+          <input
+            type={typeof data === 'number' ? 'number' : 'text'}
+            value={stringValue}
+            size={inputSize}
+            onChange={e => {
+              let value: any = e.target.value
+              if (typeof data === 'number') {
+                value = parseFloat(value) || 0
+              }
+              onChange(value)
+            }}
+            className={`form-input ${typeof data === 'string' ? 'form-input-string' : ''} ${isMatch && searchQuery ? 'search-match-input' : ''}`}
+          />
+        )}
       </div>
     )
   }

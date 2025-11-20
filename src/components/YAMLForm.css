@@ -1,6 +1,10 @@
 .yaml-form-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+}
+
+.yaml-form-item:has(.form-textarea) {
+  align-items: flex-start;
 }
 
 .form-input {
@@ -8,11 +12,34 @@
   border: 1px solid var(--border-color);
   border-radius: 4px;
   font-size: 0.8125rem;
-  transition: border-color 0.2s, background 0.3s ease, color 0.3s ease;
+  font-family: 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', 'Courier', monospace;
+  transition: border-color 0.2s, background 0.3s ease, color 0.3s ease, width 0.2s;
   flex: 1;
   max-width: 400px;
   background: var(--bg-secondary);
   color: var(--text-primary);
+}
+
+.form-input-string {
+  flex: 0 1 auto;
+  min-width: 120px;
+  max-width: 800px;
+  width: auto;
+  /* 使用 size 属性时，浏览器会自动计算宽度 */
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 60px;
+  max-height: 300px;
+  min-width: 500px;
+  width: 100%;
+  max-width: 1200px;
+  font-family: 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', 'Courier', monospace;
+  line-height: 1.5;
+  overflow-y: auto;
+  flex: 1;
+  align-self: stretch;
 }
 
 .form-input:focus {
@@ -203,6 +230,7 @@
   border-radius: 4px;
   font-size: 0.8125rem;
   font-weight: 600;
+  font-family: 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', 'Courier', monospace;
   color: var(--text-primary);
   min-width: 120px;
   transition: border-color 0.2s, background 0.3s ease, color 0.3s ease;
@@ -216,6 +244,7 @@
 
 .array-index {
   font-weight: 600;
+  font-family: 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', 'Courier', monospace;
   color: var(--primary-color);
   min-width: 50px;
   font-size: 0.8125rem;
