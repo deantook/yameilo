@@ -8,6 +8,8 @@ interface YAMLFormProps {
   path?: string
   expanded?: Set<string>
   onExpandedChange?: (expanded: Set<string>) => void
+  searchQuery?: string
+  onMatchCountChange?: (count: number) => void
 }
 
 export interface YAMLFormHandle {
@@ -15,7 +17,7 @@ export interface YAMLFormHandle {
   collapseAll: () => void
 }
 
-const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, path = '', expanded: expandedProp, onExpandedChange }, ref) => {
+const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, path = '', expanded: expandedProp, onExpandedChange, searchQuery = '', onMatchCountChange }, ref) => {
   // 如果提供了 expanded prop，使用它；否则使用本地状态（用于嵌套组件）
   const [localExpanded, setLocalExpanded] = useState<Set<string>>(new Set())
   const expanded = expandedProp !== undefined ? expandedProp : localExpanded
@@ -74,6 +76,176 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [showAddMenuObject])
+
+  // 检查值是否匹配搜索查询
+  const matchesSearch = useCallback((key: string, value: any, currentPath: string): boolean => {
+    if (!searchQuery) return true
+    
+    const query = searchQuery.toLowerCase()
+    const keyMatch = key.toLowerCase().includes(query)
+    
+    // 检查值是否匹配
+    let valueMatch = false
+    if (value === null || value === undefined) {
+      valueMatch = false
+    } else if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      valueMatch = String(value).toLowerCase().includes(query)
+    } else if (Array.isArray(value)) {
+      // 检查数组中是否有匹配项
+      valueMatch = value.some(item => {
+        if (typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean') {
+          return String(item).toLowerCase().includes(query)
+        }
+        return false
+      })
+    } else if (typeof value === 'object') {
+      // 递归检查对象中是否有匹配项
+      valueMatch = Object.entries(value).some(([k, v]) => 
+        matchesSearch(k, v, currentPath ? `${currentPath}.${k}` : k)
+      )
+    }
+    
+    return keyMatch || valueMatch
+  }, [searchQuery])
+
+  // 递归检查是否有子项匹配搜索
+  const hasMatchingChild = useCallback((value: any, currentPath: string): boolean => {
+    if (!searchQuery) return true
+    
+    if (Array.isArray(value)) {
+      return value.some((item, index) => {
+        const itemPath = currentPath ? `${currentPath}[${index}]` : `[${index}]`
+        if (typeof item === 'object' && item !== null) {
+          return hasMatchingChild(item, itemPath)
+        }
+        return matchesSearch(String(index), item, itemPath)
+      })
+    } else if (typeof value === 'object' && value !== null) {
+      return Object.entries(value).some(([k, v]) => {
+        const itemPath = currentPath ? `${currentPath}.${k}` : k
+        if (typeof v === 'object' && v !== null) {
+          return matchesSearch(k, v, itemPath) || hasMatchingChild(v, itemPath)
+        }
+        return matchesSearch(k, v, itemPath)
+      })
+    }
+    
+    return false
+  }, [searchQuery, matchesSearch])
+
+  // 高亮文本函数
+  const highlightText = useCallback((text: string, query: string): React.ReactNode => {
+    if (!query) return text
+    
+    const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'))
+    return parts.map((part, index) => 
+      part.toLowerCase() === query.toLowerCase() ? (
+        <mark key={index} className="search-highlight">{part}</mark>
+      ) : (
+        part
+      )
+    )
+  }, [])
+
+  // 计算匹配项数量（只在顶层执行）
+  const countMatches = useCallback((obj: any, currentPath: string = ''): number => {
+    if (!searchQuery) return 0
+    
+    let count = 0
+    if (Array.isArray(obj)) {
+      obj.forEach((item, index) => {
+        const itemPath = currentPath ? `${currentPath}[${index}]` : `[${index}]`
+        if (matchesSearch(String(index), item, itemPath)) {
+          count++
+        }
+        if (typeof item === 'object' && item !== null) {
+          count += countMatches(item, itemPath)
+        }
+      })
+    } else if (typeof obj === 'object' && obj !== null) {
+      Object.entries(obj).forEach(([key, value]) => {
+        const itemPath = currentPath ? `${currentPath}.${key}` : key
+        if (matchesSearch(key, value, itemPath)) {
+          count++
+        }
+        if (typeof value === 'object' && value !== null) {
+          count += countMatches(value, itemPath)
+        }
+      })
+    }
+    return count
+  }, [searchQuery, matchesSearch])
+
+  // 自动展开匹配项的父级节点
+  useEffect(() => {
+    if (!searchQuery || path) return // 只在顶层执行
+    
+    const expandMatchingPaths = (obj: any, currentPath: string = '', pathsToExpand: Set<string> = new Set()): Set<string> => {
+      if (Array.isArray(obj)) {
+        obj.forEach((item, index) => {
+          const itemPath = currentPath ? `${currentPath}[${index}]` : `[${index}]`
+          if (matchesSearch(String(index), item, itemPath) || hasMatchingChild(item, itemPath)) {
+            // 展开所有父级路径
+            const pathParts = itemPath.split(/[\[\]\.]/).filter(Boolean)
+            let parentPath = ''
+            pathParts.forEach((part, i) => {
+              if (i === 0) {
+                parentPath = part
+              } else {
+                parentPath = parentPath.includes('[') ? `${parentPath}[${part}]` : `${parentPath}.${part}`
+              }
+              if (parentPath) {
+                pathsToExpand.add(parentPath)
+              }
+            })
+          }
+          if (typeof item === 'object' && item !== null) {
+            expandMatchingPaths(item, itemPath, pathsToExpand)
+          }
+        })
+      } else if (typeof obj === 'object' && obj !== null) {
+        Object.entries(obj).forEach(([key, value]) => {
+          const itemPath = currentPath ? `${currentPath}.${key}` : key
+          if (matchesSearch(key, value, itemPath) || hasMatchingChild(value, itemPath)) {
+            // 展开所有父级路径
+            const pathParts = itemPath.split(/[\[\]\.]/).filter(Boolean)
+            let parentPath = ''
+            pathParts.forEach((part, i) => {
+              if (i === 0) {
+                parentPath = part
+              } else {
+                parentPath = parentPath.includes('[') ? `${parentPath}[${part}]` : `${parentPath}.${part}`
+              }
+              if (parentPath) {
+                pathsToExpand.add(parentPath)
+              }
+            })
+          }
+          if (typeof value === 'object' && value !== null) {
+            expandMatchingPaths(value, itemPath, pathsToExpand)
+          }
+        })
+      }
+      return pathsToExpand
+    }
+    
+    const pathsToExpand = expandMatchingPaths(data)
+    if (pathsToExpand.size > 0) {
+      setExpanded((prev) => {
+        const next = new Set(prev)
+        pathsToExpand.forEach(path => next.add(path))
+        return next
+      })
+    }
+  }, [searchQuery, data, path, matchesSearch, hasMatchingChild, setExpanded])
+
+  // 计算匹配项数量并通知父组件（只在顶层执行）
+  useEffect(() => {
+    if (!path && onMatchCountChange) {
+      const count = countMatches(data)
+      onMatchCountChange(count)
+    }
+  }, [searchQuery, data, path, countMatches, onMatchCountChange])
 
   // 获取值的类型
   const getValueType = useCallback((value: any): 'string' | 'number' | 'boolean' | 'object' | 'array' => {
@@ -503,23 +675,25 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
   }
 
   if (typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean') {
+    const isMatch = searchQuery && String(data).toLowerCase().includes(searchQuery.toLowerCase())
+    
     if (typeof data === 'boolean') {
       return (
-        <div className="yaml-form-item">
+        <div className={`yaml-form-item ${isMatch ? 'search-match' : ''}`}>
           <div className="boolean-toggle">
             <button
               className={`toggle-option ${!data ? 'active' : ''}`}
               onClick={() => onChange(false)}
               type="button"
             >
-              False
+              {searchQuery ? highlightText('False', searchQuery) : 'False'}
             </button>
             <button
               className={`toggle-option ${data ? 'active' : ''}`}
               onClick={() => onChange(true)}
               type="button"
             >
-              True
+              {searchQuery ? highlightText('True', searchQuery) : 'True'}
             </button>
           </div>
         </div>
@@ -527,7 +701,7 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
     }
     
     return (
-      <div className="yaml-form-item">
+      <div className={`yaml-form-item ${isMatch ? 'search-match' : ''}`}>
         <input
           type={typeof data === 'number' ? 'number' : 'text'}
           value={String(data)}
@@ -539,25 +713,44 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
             onChange(value)
           }}
           className="form-input"
+          style={{
+            backgroundColor: isMatch && searchQuery ? '#fff3cd' : undefined
+          }}
         />
       </div>
     )
   }
 
   if (Array.isArray(data)) {
+    // 过滤数组项
+    const filteredItems = searchQuery
+      ? data.map((item, index) => {
+          const itemPath = path ? `${path}[${index}]` : `[${index}]`
+          return { item, index, itemPath, matches: matchesSearch(String(index), item, itemPath) || hasMatchingChild(item, itemPath) }
+        }).filter(({ matches }) => matches)
+      : data.map((item, index) => {
+          const itemPath = path ? `${path}[${index}]` : `[${index}]`
+          return { item, index, itemPath, matches: true }
+        })
+
     return (
       <div className="yaml-form-array">
-        {data.map((item, index) => {
-          const itemPath = path ? `${path}[${index}]` : `[${index}]`
+        {filteredItems.length === 0 && searchQuery ? (
+          <div className="search-no-results">
+            未找到匹配项
+          </div>
+        ) : (
+          filteredItems.map(({ item, index, itemPath }) => {
           const fullKey = path ? `${path}[${index}]` : String(index)
           const isExpanded = expanded.has(fullKey)
           const isObject = typeof item === 'object' && item !== null && !Array.isArray(item)
           const isNestedArray = Array.isArray(item)
+          const isMatch = matchesSearch(String(index), item, itemPath)
 
           return (
             <div 
               key={index} 
-              className={`yaml-form-array-item ${draggedIndex === index ? 'dragging' : ''} ${dragOverIndex === index ? 'drag-over' : ''}`}
+              className={`yaml-form-array-item ${draggedIndex === index ? 'dragging' : ''} ${dragOverIndex === index ? 'drag-over' : ''} ${isMatch ? 'search-match' : ''}`}
               draggable
               onDragStart={(e) => handleArrayDragStart(e, index)}
               onDragOver={(e) => handleArrayDragOver(e, index)}
@@ -580,7 +773,7 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                 >
                   {isExpanded ? <ChevronDownIcon size={12} /> : <ChevronRightIcon size={12} />}
                 </button>
-                <span className="array-index">[{index}]</span>
+                <span className="array-index">{highlightText(`[${index}]`, searchQuery)}</span>
                 <TypeSelector itemKey={String(index)} currentValue={item} />
                 {isObject || isNestedArray ? (
                   <span className="type-badge">{isNestedArray ? '数组' : '对象'}</span>
@@ -591,6 +784,8 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                     path={itemPath}
                     expanded={expanded}
                     onExpandedChange={setExpanded}
+                    searchQuery={searchQuery}
+                    onMatchCountChange={onMatchCountChange}
                   />
                 )}
                 <button
@@ -609,13 +804,17 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                     path={itemPath}
                     expanded={expanded}
                     onExpandedChange={setExpanded}
+                    searchQuery={searchQuery}
+                    onMatchCountChange={onMatchCountChange}
                   />
                 </div>
               )}
             </div>
           )
-        })}
-        <div className="add-item-container" ref={addMenuArrayRef}>
+        })
+        )}
+        {(!searchQuery || filteredItems.length > 0) && (
+          <div className="add-item-container" ref={addMenuArrayRef}>
           <button 
             className="add-btn-icon" 
             onClick={() => setShowAddMenuArray(!showAddMenuArray)}
@@ -642,7 +841,8 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
               </button>
             </div>
           )}
-        </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -650,20 +850,36 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
   // Object
   const keys = Object.keys(data)
   const isEmpty = keys.length === 0 && !path
+  
+  // 过滤对象键
+  const filteredKeys = searchQuery
+    ? keys.filter(key => {
+        const value = data[key]
+        const itemPath = path ? `${path}.${key}` : key
+        return matchesSearch(key, value, itemPath) || hasMatchingChild(value, itemPath)
+      })
+    : keys
+
   return (
     <div className={`yaml-form-object ${isEmpty ? 'empty-object' : ''}`}>
-      {keys.map(key => {
+      {filteredKeys.length === 0 && searchQuery ? (
+        <div className="search-no-results">
+          未找到匹配项
+        </div>
+      ) : (
+        filteredKeys.map(key => {
         const value = data[key]
         const itemPath = path ? `${path}.${key}` : key
         const fullKey = path ? `${path}.${key}` : key
         const isExpanded = expanded.has(fullKey)
         const isObject = typeof value === 'object' && value !== null && !Array.isArray(value)
         const isNestedArray = Array.isArray(value)
+        const isMatch = matchesSearch(key, value, itemPath)
 
         return (
           <div 
             key={key} 
-            className={`yaml-form-object-item ${draggedIndex === key ? 'dragging' : ''} ${dragOverIndex === key ? 'drag-over' : ''}`}
+            className={`yaml-form-object-item ${draggedIndex === key ? 'dragging' : ''} ${dragOverIndex === key ? 'drag-over' : ''} ${isMatch ? 'search-match' : ''}`}
             draggable
             onDragStart={(e) => handleObjectDragStart(e, key)}
             onDragOver={(e) => handleObjectDragOver(e, key)}
@@ -718,6 +934,9 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                   }
                 }}
                 className="key-input"
+                style={{
+                  backgroundColor: isMatch && searchQuery ? '#fff3cd' : undefined
+                }}
               />
               <TypeSelector itemKey={key} currentValue={value} />
               {!(isObject || isNestedArray) && (
@@ -727,6 +946,8 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                   path={itemPath}
                   expanded={expanded}
                   onExpandedChange={setExpanded}
+                  searchQuery={searchQuery}
+                  onMatchCountChange={onMatchCountChange}
                 />
               )}
               <button
@@ -745,13 +966,17 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                   path={itemPath}
                   expanded={expanded}
                   onExpandedChange={setExpanded}
+                  searchQuery={searchQuery}
+                  onMatchCountChange={onMatchCountChange}
                 />
               </div>
             )}
           </div>
         )
-      })}
-      <div className="add-item-container" ref={addMenuObjectRef}>
+      })
+      )}
+      {(!searchQuery || filteredKeys.length > 0) && (
+        <div className="add-item-container" ref={addMenuObjectRef}>
         <button 
           className="add-btn-icon" 
           onClick={() => setShowAddMenuObject(!showAddMenuObject)}
@@ -778,7 +1003,8 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
             </button>
           </div>
         )}
-      </div>
+        </div>
+      )}
     </div>
   )
 })

@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import * as yaml from 'js-yaml'
 import YAMLForm, { YAMLFormHandle } from './YAMLForm'
 import YAMLEditor, { YAMLEditorHandle } from './YAMLEditor'
-import { FileIcon, SortIcon, SaveIcon, ReloadIcon, UploadIcon, ChevronDownIcon, ChevronRightIcon, FormatIcon } from './Icons'
+import { FileIcon, SortIcon, SaveIcon, ReloadIcon, UploadIcon, ChevronDownIcon, ChevronRightIcon, FormatIcon, SearchIcon, CloseIcon } from './Icons'
 import './YAMLVisualizer.css'
 
 interface YAMLVisualizerProps {
@@ -23,11 +23,14 @@ export default function YAMLVisualizer({
   const [yamlText, setYamlText] = useState('')
   const [parseError, setParseError] = useState('')
   const [isAllExpanded, setIsAllExpanded] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [matchCount, setMatchCount] = useState(0)
   const isUpdatingFromForm = useRef(false)
   const isUpdatingFromEditor = useRef(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const formRef = useRef<YAMLFormHandle | null>(null)
   const editorRef = useRef<YAMLEditorHandle | null>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   // 将数据转换为 YAML 文本
   const dataToYaml = useCallback((data: any): string => {
@@ -61,6 +64,23 @@ export default function YAMLVisualizer({
   useEffect(() => {
     setIsAllExpanded(false)
   }, [data])
+
+  // 快捷键支持：Ctrl+F 聚焦搜索框
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault()
+        searchInputRef.current?.focus()
+      }
+      if (e.key === 'Escape' && document.activeElement === searchInputRef.current) {
+        setSearchQuery('')
+        setMatchCount(0)
+        searchInputRef.current?.blur()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   // 处理文件上传
   const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -199,6 +219,32 @@ export default function YAMLVisualizer({
             )}
           </div>
           <div className="toolbar-right">
+            <div className="search-container">
+              <SearchIcon size={14} className="search-icon" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                className="search-input"
+                placeholder="搜索配置项 (Ctrl+F)"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && matchCount > 0 && (
+                <span className="search-count">{matchCount}</span>
+              )}
+              {searchQuery && (
+                <button
+                  className="search-clear-btn"
+                  onClick={() => {
+                    setSearchQuery('')
+                    setMatchCount(0)
+                  }}
+                  title="清除搜索"
+                >
+                  <CloseIcon size={12} />
+                </button>
+              )}
+            </div>
             <input
               ref={fileInputRef}
               type="file"
@@ -278,7 +324,9 @@ export default function YAMLVisualizer({
               <YAMLForm 
                 ref={formRef}
                 data={data} 
-                onChange={onDataChange} 
+                onChange={onDataChange}
+                searchQuery={searchQuery}
+                onMatchCountChange={setMatchCount}
               />
             </div>
           </div>

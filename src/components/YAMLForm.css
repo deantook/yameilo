@@ -417,3 +417,43 @@
   border-bottom: 1px solid #e9ecef;
 }
 
+.search-highlight {
+  background: #ffc107;
+  color: #000;
+  padding: 0.125rem 0.25rem;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+.search-match {
+  position: relative;
+}
+
+.search-match::before {
+  content: '';
+  position: absolute;
+  left: -0.5rem;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #ffc107;
+  border-radius: 2px;
+}
+
+.value-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.search-no-results {
+  padding: 1rem;
+  text-align: center;
+  color: #6c757d;
+  font-size: 0.875rem;
+  font-style: italic;
+  background: #f8f9fa;
+  border-radius: 4px;
+  margin: 0.5rem 0;
+}
+
