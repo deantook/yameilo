@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ThemeProvider } from './contexts/ThemeContext'
 import YAMLVisualizer from './components/YAMLVisualizer'
 import './App.css'
 
@@ -16,20 +17,22 @@ function App() {
   }
 
   return (
-    <div className="app">
-      <main className="app-main">
-        <YAMLVisualizer
-          data={yamlData}
-          fileName={fileName}
-          onDataChange={handleDataChange}
-          onFileLoad={handleFileLoad}
-          onReset={() => {
-            setYamlData({})
-            setFileName('')
-          }}
-        />
-      </main>
-    </div>
+    <ThemeProvider>
+      <div className="app">
+        <main className="app-main">
+          <YAMLVisualizer
+            data={yamlData}
+            fileName={fileName}
+            onDataChange={handleDataChange}
+            onFileLoad={handleFileLoad}
+            onReset={() => {
+              setYamlData({})
+              setFileName('')
+            }}
+          />
+        </main>
+      </div>
+    </ThemeProvider>
   )
 }
 

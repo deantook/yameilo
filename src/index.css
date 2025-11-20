@@ -1,3 +1,43 @@
+:root {
+  /* 亮色主题变量 */
+  --bg-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --bg-secondary: white;
+  --bg-tertiary: #f8f9fa;
+  --bg-hover: #e9ecef;
+  --text-primary: #333;
+  --text-secondary: #6c757d;
+  --text-tertiary: #999;
+  --border-color: #e9ecef;
+  --primary-color: #667eea;
+  --primary-hover: #5568d3;
+  --secondary-color: #6c757d;
+  --secondary-hover: #5a6268;
+  --error-bg: #fff5f5;
+  --error-border: #fecaca;
+  --error-text: #dc3545;
+  --shadow: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] {
+  /* 暗色主题变量 */
+  --bg-primary: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  --bg-secondary: #1e1e2e;
+  --bg-tertiary: #252538;
+  --bg-hover: #2d2d44;
+  --text-primary: #e4e4e7;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #71717a;
+  --border-color: #3f3f46;
+  --primary-color: #818cf8;
+  --primary-hover: #6366f1;
+  --secondary-color: #71717a;
+  --secondary-hover: #52525b;
+  --error-bg: #3f1f1f;
+  --error-border: #7f1d1d;
+  --error-text: #f87171;
+  --shadow: rgba(0, 0, 0, 0.5);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -10,8 +50,10 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--bg-primary);
   min-height: 100vh;
+  color: var(--text-primary);
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 #root {

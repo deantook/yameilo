@@ -712,10 +712,7 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
             }
             onChange(value)
           }}
-          className="form-input"
-          style={{
-            backgroundColor: isMatch && searchQuery ? '#fff3cd' : undefined
-          }}
+          className={`form-input ${isMatch && searchQuery ? 'search-match-input' : ''}`}
         />
       </div>
     )
@@ -933,10 +930,7 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                     }, 0)
                   }
                 }}
-                className="key-input"
-                style={{
-                  backgroundColor: isMatch && searchQuery ? '#fff3cd' : undefined
-                }}
+                className={`key-input ${isMatch && searchQuery ? 'search-match-input' : ''}`}
               />
               <TypeSelector itemKey={key} currentValue={value} />
               {!(isObject || isNestedArray) && (

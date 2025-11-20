@@ -8,6 +8,7 @@ interface YAMLEditorProps {
   value: string
   onChange: (value: string) => void
   onParseError?: (error: string) => void
+  theme?: 'light' | 'dark'
 }
 
 export interface YAMLEditorHandle {
@@ -15,7 +16,7 @@ export interface YAMLEditorHandle {
 }
 
 const YAMLEditor = forwardRef<YAMLEditorHandle, YAMLEditorProps>(
-  ({ value, onChange, onParseError }, ref) => {
+  ({ value, onChange, onParseError, theme = 'light' }, ref) => {
     const editorRef = useRef<any>(null)
     const isInternalUpdate = useRef(false)
 
@@ -155,7 +156,7 @@ const YAMLEditor = forwardRef<YAMLEditorHandle, YAMLEditorProps>(
           value={value}
           onChange={handleEditorChange}
           onMount={handleEditorDidMount}
-          theme="vs"
+          theme={theme === 'dark' ? 'vs-dark' : 'vs'}
           options={{
             minimap: { enabled: false },
             scrollBeyondLastLine: false,

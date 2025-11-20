@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import * as yaml from 'js-yaml'
+import { useTheme } from '../contexts/ThemeContext'
 import YAMLForm, { YAMLFormHandle } from './YAMLForm'
 import YAMLEditor, { YAMLEditorHandle } from './YAMLEditor'
-import { FileIcon, SortIcon, SaveIcon, ReloadIcon, UploadIcon, ChevronDownIcon, ChevronRightIcon, FormatIcon, SearchIcon, CloseIcon } from './Icons'
+import { FileIcon, SortIcon, SaveIcon, ReloadIcon, UploadIcon, ChevronDownIcon, ChevronRightIcon, FormatIcon, SearchIcon, CloseIcon, MoonIcon, SunIcon } from './Icons'
 import './YAMLVisualizer.css'
 
 interface YAMLVisualizerProps {
@@ -20,6 +21,7 @@ export default function YAMLVisualizer({
   onFileLoad,
   onReset,
 }: YAMLVisualizerProps) {
+  const { theme, toggleTheme } = useTheme()
   const [yamlText, setYamlText] = useState('')
   const [parseError, setParseError] = useState('')
   const [isAllExpanded, setIsAllExpanded] = useState(false)
@@ -219,6 +221,7 @@ export default function YAMLVisualizer({
             )}
           </div>
           <div className="toolbar-right">
+            {/* 搜索框 - 最常用的功能，放在最前面 */}
             <div className="search-container">
               <SearchIcon size={14} className="search-icon" />
               <input
@@ -245,6 +248,8 @@ export default function YAMLVisualizer({
                 </button>
               )}
             </div>
+            
+            {/* 文件操作组 */}
             <input
               ref={fileInputRef}
               type="file"
@@ -260,14 +265,12 @@ export default function YAMLVisualizer({
               <UploadIcon size={14} />
               <span>上传文件</span>
             </button>
-            <button
-              className="btn btn-secondary"
-              onClick={handleSort}
-              title="按 key 字母顺序排序"
-            >
-              <SortIcon size={14} />
-              <span>排序</span>
+            <button className="btn btn-primary" onClick={handleSave}>
+              <SaveIcon size={14} />
+              <span>保存</span>
             </button>
+            
+            {/* 编辑操作组 */}
             <button
               className="btn btn-secondary"
               onClick={() => editorRef.current?.format()}
@@ -276,21 +279,16 @@ export default function YAMLVisualizer({
               <FormatIcon size={14} />
               <span>格式化</span>
             </button>
-            <button className="btn btn-primary" onClick={handleSave}>
-              <SaveIcon size={14} />
-              <span>保存</span>
-            </button>
-            <button 
-              className="btn btn-secondary" 
-              onClick={() => {
-                isInitialized.current = false
-                setYamlText('')
-                onReset()
-              }}
+            <button
+              className="btn btn-secondary"
+              onClick={handleSort}
+              title="按 key 字母顺序排序"
             >
-              <ReloadIcon size={14} />
-              <span>清空</span>
+              <SortIcon size={14} />
+              <span>排序</span>
             </button>
+            
+            {/* 视图操作组 */}
             <button
               className="btn btn-secondary"
               onClick={() => {
@@ -308,6 +306,30 @@ export default function YAMLVisualizer({
               {isAllExpanded ? <ChevronDownIcon size={14} /> : <ChevronRightIcon size={14} />}
               <span>{isAllExpanded ? '全部折叠' : '全部展开'}</span>
             </button>
+            
+            {/* 设置组 */}
+            <button
+              className="btn btn-secondary"
+              onClick={toggleTheme}
+              title={theme === 'light' ? '切换到暗色主题' : '切换到亮色主题'}
+            >
+              {theme === 'light' ? <MoonIcon size={14} /> : <SunIcon size={14} />}
+              <span>{theme === 'light' ? '暗色' : '亮色'}</span>
+            </button>
+            
+            {/* 其他操作 - 危险操作放在最后 */}
+            <button 
+              className="btn btn-secondary" 
+              onClick={() => {
+                isInitialized.current = false
+                setYamlText('')
+                onReset()
+              }}
+              title="清空当前编辑内容"
+            >
+              <ReloadIcon size={14} />
+              <span>清空</span>
+            </button>
           </div>
         </div>
         <div className="visualizer-content">
@@ -317,6 +339,7 @@ export default function YAMLVisualizer({
               value={yamlText}
               onChange={handleEditorChange}
               onParseError={setParseError}
+              theme={theme}
             />
           </div>
           <div className="form-panel">
