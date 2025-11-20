@@ -413,9 +413,9 @@
 
 .type-menu {
   position: absolute;
-  bottom: 100%;
-  left: 0;
-  margin-bottom: 0.25rem;
+  top: 0;
+  left: 100%;
+  margin-left: 0.25rem;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: 4px;
