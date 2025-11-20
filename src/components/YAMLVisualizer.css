@@ -238,6 +238,15 @@
   box-shadow: 0 4px 12px rgba(100, 116, 139, 0.4);
 }
 
+.btn-secondary.active {
+  background: var(--primary-color);
+  color: white;
+}
+
+.btn-secondary.active:hover {
+  background: var(--primary-hover);
+}
+
 .export-menu-container {
   position: relative;
   display: inline-block;

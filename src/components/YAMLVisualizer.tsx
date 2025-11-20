@@ -5,7 +5,8 @@ import { js2xml } from 'xml-js'
 import { useTheme } from '../contexts/ThemeContext'
 import YAMLForm, { YAMLFormHandle } from './YAMLForm'
 import YAMLEditor, { YAMLEditorHandle } from './YAMLEditor'
-import { FileIcon, SortIcon, SaveIcon, ReloadIcon, UploadIcon, ChevronDownIcon, ChevronRightIcon, FormatIcon, SearchIcon, CloseIcon, MoonIcon, SunIcon, GitHubIcon, DownloadIcon } from './Icons'
+import StatsPanel from './StatsPanel'
+import { FileIcon, SortIcon, SaveIcon, ReloadIcon, UploadIcon, ChevronDownIcon, ChevronRightIcon, FormatIcon, SearchIcon, CloseIcon, MoonIcon, SunIcon, GitHubIcon, DownloadIcon, StatsIcon } from './Icons'
 import './YAMLVisualizer.css'
 
 interface YAMLVisualizerProps {
@@ -32,6 +33,8 @@ export default function YAMLVisualizer({
   const [editingFileName, setEditingFileName] = useState(fileName || '')
   const [isEditingFileName, setIsEditingFileName] = useState(false)
   const [showExportMenu, setShowExportMenu] = useState(false)
+  const [showStatsPanel, setShowStatsPanel] = useState(false)
+  const [isStatsPanelExpanded, setIsStatsPanelExpanded] = useState(false)
   const fileNameInputRef = useRef<HTMLInputElement>(null)
   const isUpdatingFromForm = useRef(false)
   const isUpdatingFromEditor = useRef(false)
@@ -662,6 +665,14 @@ export default function YAMLVisualizer({
             
             {/* 设置组 */}
             <button
+              className={`btn btn-secondary ${showStatsPanel ? 'active' : ''}`}
+              onClick={() => setShowStatsPanel(!showStatsPanel)}
+              title={showStatsPanel ? '隐藏统计面板' : '显示统计面板'}
+            >
+              <StatsIcon size={14} />
+              <span>统计</span>
+            </button>
+            <button
               className="btn btn-secondary"
               onClick={toggleTheme}
               title={theme === 'light' ? '切换到暗色主题' : '切换到亮色主题'}
@@ -698,6 +709,14 @@ export default function YAMLVisualizer({
           </div>
           <div className="form-panel">
             <div className="form-container">
+              {showStatsPanel && (
+                <StatsPanel
+                  data={data}
+                  yamlText={yamlText}
+                  isOpen={isStatsPanelExpanded}
+                  onToggle={() => setIsStatsPanelExpanded(!isStatsPanelExpanded)}
+                />
+              )}
               <YAMLForm 
                 ref={formRef}
                 data={data} 
