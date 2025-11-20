@@ -88,19 +88,22 @@ npm run preview
 
 本项目已配置自动部署到 GitHub Pages。每次推送到 `main` 分支时，GitHub Actions 会自动构建并部署项目。
 
-### 首次部署步骤
+### 部署步骤
 
-1. **启用 GitHub Pages**
-   - 进入仓库的 Settings → Pages
-   - Source 选择 "GitHub Actions"
-
-2. **推送代码**
+1. **推送代码**
    - 推送代码到 `main` 分支
    - GitHub Actions 会自动触发构建和部署
+   - **注意**：工作流已配置 `enablement: true`，会自动启用 GitHub Pages，无需手动配置
 
-3. **访问网站**
+2. **访问网站**
    - 部署完成后，访问 `https://deantook.github.io/yameilo/`
    - 如果仓库名称或用户名不同，请相应修改 URL
+
+### 手动启用 GitHub Pages（可选）
+
+如果自动启用失败，可以手动配置：
+- 进入仓库的 Settings → Pages
+- Source 选择 "GitHub Actions"
 
 ### 手动触发部署
 
