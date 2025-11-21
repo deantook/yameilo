@@ -931,9 +931,23 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                   const cursorPosition = e.target.selectionStart || 0
                   
                   if (newKey && newKey !== key) {
-                    const newData = { ...data }
-                    newData[newKey] = newData[key]
-                    delete newData[key]
+                    // 保持原有的键顺序，在相同位置替换 key
+                    const keys = Object.keys(data)
+                    const oldKeyIndex = keys.indexOf(key)
+                    const newData: any = {}
+                    
+                    // 按照原顺序构建新对象，将旧 key 替换为新 key
+                    keys.forEach((k, index) => {
+                      if (index === oldKeyIndex) {
+                        // 在旧 key 的位置插入新 key
+                        newData[newKey] = data[key]
+                      } else if (k !== key) {
+                        // 其他键保持不变
+                        newData[k] = data[k]
+                      }
+                      // 跳过旧 key（已经在上面处理了）
+                    })
+                    
                     onChange(newData)
                     
                     // 恢复焦点和光标位置
