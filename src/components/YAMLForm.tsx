@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
-import { ChevronDownIcon, ChevronRightIcon, DeleteIcon, PlusIcon, DragHandleIcon } from './Icons'
+import { ChevronDownIcon, ChevronRightIcon, DeleteIcon, PlusIcon, DragHandleIcon, CopyIcon } from './Icons'
 import './YAMLForm.css'
 
 interface YAMLFormProps {
@@ -662,6 +662,99 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
     setDragOverIndex(null)
   }, [data, draggedIndex, onChange])
 
+  // 生成路径文本（格式：/a/b/c/d:3）
+  const getPathText = useCallback((currentPath: string, value: any): string => {
+    // 将路径转换为 /a/b/c/d 格式
+    // 处理格式如: "a.b.c.d", "[0]", "a[0]", "a.b[0]" 等
+    const pathParts: string[] = []
+    let currentPart = ''
+    
+    for (let i = 0; i < currentPath.length; i++) {
+      const char = currentPath[i]
+      if (char === '.' || char === '[' || char === ']') {
+        if (currentPart) {
+          pathParts.push(currentPart)
+          currentPart = ''
+        }
+      } else {
+        currentPart += char
+      }
+    }
+    if (currentPart) {
+      pathParts.push(currentPart)
+    }
+    
+    const pathStr = pathParts.length > 0 ? '/' + pathParts.join('/') : ''
+    
+    // 获取值的字符串表示
+    let valueStr = ''
+    if (value === null || value === undefined) {
+      valueStr = 'null'
+    } else if (typeof value === 'string') {
+      valueStr = value
+    } else if (typeof value === 'number' || typeof value === 'boolean') {
+      valueStr = String(value)
+    } else if (Array.isArray(value)) {
+      valueStr = `[${value.length} items]`
+    } else if (typeof value === 'object') {
+      valueStr = `{${Object.keys(value).length} keys}`
+    }
+    
+    return `${pathStr}:${valueStr}`
+  }, [])
+
+  // 显示提示消息的状态（只在顶层使用）
+  const [toastMessage, setToastMessage] = useState<string>('')
+  const toastTimeoutRef = useRef<number | null>(null)
+
+  // 清理toast定时器
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  // 显示提示消息（只在顶层显示）
+  const showToast = useCallback((message: string) => {
+    if (!path) {
+      // 只在顶层显示toast
+      setToastMessage(message)
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current)
+      }
+      toastTimeoutRef.current = window.setTimeout(() => {
+        setToastMessage('')
+      }, 2000)
+    }
+  }, [path])
+
+  // 复制路径文本到剪贴板
+  const copyPathText = useCallback(async (currentPath: string, value: any) => {
+    const pathText = getPathText(currentPath, value)
+    try {
+      await navigator.clipboard.writeText(pathText)
+      showToast('已复制')
+    } catch (err) {
+      // 如果剪贴板API不可用，使用fallback方法
+      const textArea = document.createElement('textarea')
+      textArea.value = pathText
+      textArea.style.position = 'fixed'
+      textArea.style.opacity = '0'
+      document.body.appendChild(textArea)
+      textArea.select()
+      try {
+        document.execCommand('copy')
+        showToast('已复制')
+      } catch (fallbackErr) {
+        console.error('复制失败:', fallbackErr)
+        showToast('复制失败，请手动复制')
+      }
+      document.body.removeChild(textArea)
+    }
+  }, [getPathText, showToast])
+
   if (data === null || data === undefined) {
     return (
       <div className="yaml-form-item">
@@ -810,6 +903,16 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                   />
                 )}
                 <button
+                  className="copy-path-btn"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    copyPathText(itemPath, item)
+                  }}
+                  title="复制路径"
+                >
+                  <CopyIcon size={14} />
+                </button>
+                <button
                   className="delete-btn"
                   onClick={() => deleteItem(String(index))}
                   title="删除此项"
@@ -884,11 +987,11 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
 
   return (
     <div className={`yaml-form-object ${isEmpty ? 'empty-object' : ''}`}>
-      {filteredKeys.length === 0 && searchQuery ? (
-        <div className="search-no-results">
-          未找到匹配项
-        </div>
-      ) : (
+        {filteredKeys.length === 0 && searchQuery ? (
+          <div className="search-no-results">
+            未找到匹配项
+          </div>
+        ) : (
         filteredKeys.map(key => {
         const value = data[key]
         const itemPath = path ? `${path}.${key}` : key
@@ -990,6 +1093,16 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                 />
               )}
               <button
+                className="copy-path-btn"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  copyPathText(itemPath, value)
+                }}
+                title="复制路径"
+              >
+                <CopyIcon size={14} />
+              </button>
+              <button
                 className="delete-btn"
                 onClick={() => deleteItem(key)}
                 title="删除此项"
@@ -1043,6 +1156,11 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
             </button>
           </div>
         )}
+        </div>
+      )}
+      {!path && toastMessage && (
+        <div className="toast-message">
+          {toastMessage}
         </div>
       )}
     </div>

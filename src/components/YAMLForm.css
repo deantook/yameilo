@@ -282,6 +282,35 @@
   box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
 }
 
+.copy-path-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.1875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  opacity: 0.85;
+  margin-left: auto;
+}
+
+.copy-path-btn:hover {
+  opacity: 1;
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  background: var(--primary-hover);
+}
+
+.copy-path-btn svg {
+  flex-shrink: 0;
+}
+
 .delete-btn {
   background: var(--error-text);
   color: white;
@@ -290,7 +319,7 @@
   padding: 0.1875rem;
   cursor: pointer;
   transition: all 0.2s;
-  margin-left: auto;
+  margin-left: 0.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -583,5 +612,32 @@
   z-index: 10;
   position: relative;
   box-shadow: 0 4px 12px var(--shadow);
+}
+
+.toast-message {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: var(--success-color);
+  color: white;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+  font-size: 0.875rem;
+  font-weight: 500;
+  animation: toastSlideIn 0.3s ease-out;
+  max-width: 300px;
+}
+
+@keyframes toastSlideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
