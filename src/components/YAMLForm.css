@@ -556,3 +556,32 @@
   border-color: var(--warning-color) !important;
 }
 
+.inline-comment {
+  padding: 0.125rem 0.5rem;
+  margin-left: 0.5rem;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 0.6875rem;
+  font-style: italic;
+  border-radius: 4px;
+  white-space: nowrap;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border-color);
+  font-family: 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', 'Courier', monospace;
+}
+
+.inline-comment:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  max-width: 500px;
+  white-space: normal;
+  word-break: break-word;
+  z-index: 10;
+  position: relative;
+  box-shadow: 0 4px 12px var(--shadow);
+}
+

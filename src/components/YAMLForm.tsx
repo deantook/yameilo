@@ -10,6 +10,7 @@ interface YAMLFormProps {
   onExpandedChange?: (expanded: Set<string>) => void
   searchQuery?: string
   onMatchCountChange?: (count: number) => void
+  commentsMap?: Map<string, string>
 }
 
 export interface YAMLFormHandle {
@@ -17,7 +18,7 @@ export interface YAMLFormHandle {
   collapseAll: () => void
 }
 
-const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, path = '', expanded: expandedProp, onExpandedChange, searchQuery = '', onMatchCountChange }, ref) => {
+const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, path = '', expanded: expandedProp, onExpandedChange, searchQuery = '', onMatchCountChange, commentsMap = new Map() }, ref) => {
   // 如果提供了 expanded prop，使用它；否则使用本地状态（用于嵌套组件）
   const [localExpanded, setLocalExpanded] = useState<Set<string>>(new Set())
   const expanded = expandedProp !== undefined ? expandedProp : localExpanded
@@ -789,6 +790,11 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                 </button>
                 <span className="array-index">{highlightText(`[${index}]`, searchQuery)}</span>
                 <TypeSelector itemKey={String(index)} currentValue={item} />
+                {commentsMap.has(itemPath) && (
+                  <span className="inline-comment" title={commentsMap.get(itemPath)}>
+                    {commentsMap.get(itemPath)}
+                  </span>
+                )}
                 {isObject || isNestedArray ? (
                   <span className="type-badge">{isNestedArray ? '数组' : '对象'}</span>
                 ) : (
@@ -800,6 +806,7 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                     onExpandedChange={setExpanded}
                     searchQuery={searchQuery}
                     onMatchCountChange={onMatchCountChange}
+                    commentsMap={commentsMap}
                   />
                 )}
                 <button
@@ -820,6 +827,7 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                     onExpandedChange={setExpanded}
                     searchQuery={searchQuery}
                     onMatchCountChange={onMatchCountChange}
+                    commentsMap={commentsMap}
                   />
                 </div>
               )}
@@ -885,6 +893,16 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
         const value = data[key]
         const itemPath = path ? `${path}.${key}` : key
         const fullKey = path ? `${path}.${key}` : key
+        // 调试：检查注释
+        if (key === 'app') {
+          console.log(`调试 YAMLForm [${itemPath}]:`, {
+            itemPath,
+            hasComment: commentsMap.has(itemPath),
+            comment: commentsMap.get(itemPath),
+            commentsMapSize: commentsMap.size,
+            allComments: Array.from(commentsMap.entries())
+          })
+        }
         const isExpanded = expanded.has(fullKey)
         const isObject = typeof value === 'object' && value !== null && !Array.isArray(value)
         const isNestedArray = Array.isArray(value)
@@ -964,6 +982,11 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                 className={`key-input ${isMatch && searchQuery ? 'search-match-input' : ''}`}
               />
               <TypeSelector itemKey={key} currentValue={value} />
+              {commentsMap.has(itemPath) && (
+                <span className="inline-comment" title={commentsMap.get(itemPath)}>
+                  {commentsMap.get(itemPath)}
+                </span>
+              )}
               {!(isObject || isNestedArray) && (
                 <YAMLForm
                   data={value}
@@ -973,6 +996,7 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                   onExpandedChange={setExpanded}
                   searchQuery={searchQuery}
                   onMatchCountChange={onMatchCountChange}
+                  commentsMap={commentsMap}
                 />
               )}
               <button
@@ -993,6 +1017,7 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                   onExpandedChange={setExpanded}
                   searchQuery={searchQuery}
                   onMatchCountChange={onMatchCountChange}
+                  commentsMap={commentsMap}
                 />
               </div>
             )}

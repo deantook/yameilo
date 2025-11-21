@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import * as YAML from 'yaml'
 import * as TOML from '@iarna/toml'
-import { js2xml } from 'xml-js'
+import * as xmljs from 'xml-js'
 import { useTheme } from '../contexts/ThemeContext'
 import YAMLForm, { YAMLFormHandle } from './YAMLForm'
 import YAMLEditor, { YAMLEditorHandle } from './YAMLEditor'
@@ -45,6 +45,207 @@ export default function YAMLVisualizer({
   const searchInputRef = useRef<HTMLInputElement>(null)
   const exportMenuRef = useRef<HTMLDivElement>(null)
   const yamlDocRef = useRef<YAML.Document | null>(null) // 保存 YAML 文档以保留注释
+  const [commentsMap, setCommentsMap] = useState<Map<string, string>>(new Map()) // 存储路径到注释的映射
+
+  // 提取注释信息：递归遍历 YAML 节点，提取所有路径的注释
+  const extractComments = useCallback((node: YAML.Node | null, path: string = '', comments: Map<string, string> = new Map()): Map<string, string> => {
+    if (!node) return comments
+
+    // 如果是 Map（对象）
+    if (YAML.isMap(node)) {
+      const map = node as YAML.YAMLMap
+      map.items.forEach(pair => {
+        if (YAML.isScalar(pair.key)) {
+          const key = (pair.key as YAML.Scalar).value as string
+          const keyPath = path ? `${path}.${key}` : key
+          
+          // 提取注释：检查所有可能的位置（如 "app: # 应用配置"）
+          const keyAny = pair.key as any
+          const pairAny = pair as any
+          let foundComment = null
+          let commentSource = ''
+          
+          // 检查 key 节点的注释
+          if (keyAny.comment) {
+            foundComment = keyAny.comment
+            commentSource = 'key.comment'
+          } else if (keyAny.commentAfter) {
+            foundComment = keyAny.commentAfter
+            commentSource = 'key.commentAfter'
+          }
+          
+          // 如果 key 没有注释，检查 Pair 的注释
+          if (!foundComment) {
+            if (pairAny.comment) {
+              foundComment = pairAny.comment
+              commentSource = 'pair.comment'
+            } else if (pairAny.commentAfter) {
+              foundComment = pairAny.commentAfter
+              commentSource = 'pair.commentAfter'
+            }
+          }
+          
+          // 调试：打印所有注释属性
+          if (keyPath === 'app') {
+            console.log(`调试 [${keyPath}]:`, {
+              keyComment: keyAny.comment,
+              keyCommentAfter: keyAny.commentAfter,
+              keyCommentBefore: keyAny.commentBefore,
+              pairComment: pairAny.comment,
+              pairCommentAfter: pairAny.commentAfter,
+              pairCommentBefore: pairAny.commentBefore,
+              foundComment,
+              commentSource
+            })
+          }
+          
+          if (foundComment) {
+            // comment 可能是字符串或 Comment 对象
+            let commentText = ''
+            if (typeof foundComment === 'string') {
+              commentText = foundComment
+            } else if (foundComment && typeof foundComment === 'object') {
+              // 如果是 Comment 对象，尝试获取文本
+              commentText = (foundComment as any).text || (foundComment as any).comment || foundComment.toString() || ''
+            } else {
+              commentText = String(foundComment)
+            }
+            
+            if (commentText.trim()) {
+              comments.set(keyPath, commentText.trim())
+              console.log(`找到键注释 [${keyPath}] (来源: ${commentSource}):`, commentText.trim())
+            }
+          }
+          
+          // 处理值节点
+          if (pair.value && YAML.isNode(pair.value)) {
+            const valueNode = pair.value as YAML.Node
+            const valueAny = valueNode as any
+            
+            // 对于 Map 节点，检查 commentBefore（如 "app: # 应用配置" 的注释可能在 Map 的 commentBefore 中）
+            if (YAML.isMap(valueNode) && !foundComment) {
+              if (valueAny.commentBefore) {
+                let commentText = ''
+                if (typeof valueAny.commentBefore === 'string') {
+                  commentText = valueAny.commentBefore
+                } else if (valueAny.commentBefore && typeof valueAny.commentBefore === 'object') {
+                  commentText = (valueAny.commentBefore as any).text || (valueAny.commentBefore as any).comment || valueAny.commentBefore.toString() || ''
+                } else {
+                  commentText = String(valueAny.commentBefore)
+                }
+                
+                if (commentText.trim()) {
+                  comments.set(keyPath, commentText.trim())
+                  console.log(`找到 Map commentBefore 注释 [${keyPath}]:`, commentText.trim())
+                  foundComment = valueAny.commentBefore
+                }
+              }
+            }
+            
+            // 提取值的注释（如 "name: value # 注释"）
+            // 如果 key/Pair/Map 没有注释，使用值的注释；否则优先使用 key/Pair/Map 的注释
+            if (!foundComment) {
+              let valueComment = null
+              if (valueAny.comment) {
+                valueComment = valueAny.comment
+              } else if (valueAny.commentAfter) {
+                valueComment = valueAny.commentAfter
+              }
+              
+              if (valueComment) {
+                let commentText = ''
+                if (typeof valueComment === 'string') {
+                  commentText = valueComment
+                } else if (valueComment && typeof valueComment === 'object') {
+                  commentText = (valueComment as any).text || (valueComment as any).comment || valueComment.toString() || ''
+                } else {
+                  commentText = String(valueComment)
+                }
+                
+                if (commentText.trim()) {
+                  comments.set(keyPath, commentText.trim())
+                  console.log(`找到值注释 [${keyPath}]:`, commentText.trim())
+                }
+              }
+            }
+            
+            // 递归处理值（对于对象和数组），这会提取嵌套的注释
+            extractComments(valueNode, keyPath, comments)
+          }
+        }
+      })
+    }
+    // 如果是 Seq（数组）
+    else if (YAML.isSeq(node)) {
+      const seq = node as YAML.YAMLSeq
+      seq.items.forEach((item, index) => {
+        const itemPath = path ? `${path}[${index}]` : `[${index}]`
+        
+        // 提取数组项的注释
+        if (item && YAML.isNode(item)) {
+          const itemAny = item as any
+          const itemComment = itemAny.comment || itemAny.commentAfter || itemAny.commentBefore
+          if (itemComment) {
+            const commentText = typeof itemComment === 'string' ? itemComment : itemComment?.toString() || ''
+            if (commentText.trim()) {
+              comments.set(itemPath, commentText.trim())
+              console.log(`找到数组项注释 [${itemPath}]:`, commentText.trim())
+            }
+          }
+          
+          extractComments(item as YAML.Node, itemPath, comments)
+        }
+      })
+    }
+    // 如果是 Scalar（标量值），提取其注释
+    else if (YAML.isScalar(node)) {
+      const nodeAny = node as any
+      const scalarComment = nodeAny.comment || nodeAny.commentAfter || nodeAny.commentBefore
+      if (scalarComment && path) {
+        const commentText = typeof scalarComment === 'string' ? scalarComment : scalarComment?.toString() || ''
+        if (commentText.trim()) {
+          comments.set(path, commentText.trim())
+          console.log(`找到标量注释 [${path}]:`, commentText.trim())
+        }
+      }
+    }
+
+    return comments
+  }, [])
+
+  // 当 YAML 文档变化时，更新注释映射
+  useEffect(() => {
+    // 尝试从 yamlText 重新解析文档以获取最新的注释
+    if (yamlText) {
+      try {
+        const doc = YAML.parseDocument(yamlText)
+        if (doc.contents) {
+          const comments = extractComments(doc.contents)
+          console.log('提取的注释:', Array.from(comments.entries()))
+          setCommentsMap(comments)
+          // 同时更新 yamlDocRef
+          yamlDocRef.current = doc
+        } else {
+          setCommentsMap(new Map())
+        }
+      } catch (error) {
+        // 解析失败时，尝试使用 yamlDocRef
+        if (yamlDocRef.current?.contents) {
+          const comments = extractComments(yamlDocRef.current.contents)
+          console.log('从 yamlDocRef 提取的注释:', Array.from(comments.entries()))
+          setCommentsMap(comments)
+        } else {
+          setCommentsMap(new Map())
+        }
+      }
+    } else if (yamlDocRef.current?.contents) {
+      const comments = extractComments(yamlDocRef.current.contents)
+      console.log('从 yamlDocRef 提取的注释:', Array.from(comments.entries()))
+      setCommentsMap(comments)
+    } else {
+      setCommentsMap(new Map())
+    }
+  }, [yamlText, extractComments])
 
   // 将 JavaScript 值转换为 YAML 节点
   const valueToNode = useCallback((value: any): YAML.Node | null => {
@@ -284,11 +485,18 @@ export default function YAMLVisualizer({
         setYamlText(text)
         setParseError('')
         isInitialized.current = false // 重置初始化标志
+        // 提取注释
+        if (doc.contents) {
+          const comments = extractComments(doc.contents)
+          setCommentsMap(comments)
+        } else {
+          setCommentsMap(new Map())
+        }
       }
     } catch (error) {
       alert(`解析 YAML 文件失败: ${error instanceof Error ? error.message : '未知错误'}`)
     }
-  }, [onFileLoad])
+  }, [onFileLoad, extractComments])
 
   // 当表单数据变化时，更新编辑器（保留注释）
   useEffect(() => {
@@ -337,6 +545,7 @@ export default function YAMLVisualizer({
         yamlDocRef.current = null
         onDataChange({})
         setParseError('')
+        setCommentsMap(new Map())
       } else {
         // 使用 parseDocument 以保留注释
         const doc = YAML.parseDocument(text)
@@ -345,6 +554,13 @@ export default function YAMLVisualizer({
           yamlDocRef.current = doc // 保存文档以保留注释
           onDataChange(parsed)
           setParseError('')
+          // 提取注释
+          if (doc.contents) {
+            const comments = extractComments(doc.contents)
+            setCommentsMap(comments)
+          } else {
+            setCommentsMap(new Map())
+          }
         }
       }
     } catch (error) {
@@ -354,7 +570,7 @@ export default function YAMLVisualizer({
     setTimeout(() => {
       isUpdatingFromEditor.current = false
     }, 100)
-  }, [onDataChange])
+  }, [onDataChange, extractComments])
 
   const handleSort = useCallback(() => {
     const sortedData = sortObjectKeys(data)
@@ -449,8 +665,96 @@ export default function YAMLVisualizer({
   // 导出为 XML
   const handleExportXML = useCallback(() => {
     try {
-      const xmlString = js2xml({ root: data }, { compact: false, spaces: 2 })
-      const blob = new Blob([xmlString], { type: 'application/xml' })
+      // 确保 data 不为空
+      if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
+        alert('无法导出空数据为 XML')
+        return
+      }
+      
+      // 使用 xml-js 的 js2xml 函数
+      // 注意：compact: false 在某些情况下可能返回空字符串，使用 compact: true 确保正常工作
+      // 如果需要格式化，可以在生成后手动格式化
+      let xmlString = xmljs.js2xml({ root: data }, { compact: true })
+      
+      // 如果 compact: true 返回空，尝试使用 compact: false
+      if (!xmlString || xmlString.trim().length === 0) {
+        xmlString = xmljs.js2xml({ root: data }, { compact: false, spaces: 2 })
+      }
+      
+      // 确保生成的 XML 字符串不为空
+      if (!xmlString || xmlString.trim().length === 0) {
+        alert('生成的 XML 内容为空，请检查数据是否正确')
+        return
+      }
+      
+      // 格式化 XML（如果使用 compact: true）
+      if (xmlString.includes('><') && !xmlString.includes('\n')) {
+        // 格式化函数：正确添加缩进
+        const formatXML = (xml: string): string => {
+          // 在标签之间添加换行，同时处理文本内容
+          let formatted = xml
+            .replace(/></g, '>\n<')
+            .replace(/>([^<\n]+)</g, '>\n$1\n<') // 在文本内容和标签之间添加换行
+          
+          const lines = formatted.split('\n')
+          let indentLevel = 0
+          const indentSize = 2
+          const result: string[] = []
+          
+          // 辅助函数：查找下一个非空行的类型
+          const getNextNonEmptyLineType = (startIndex: number): 'end' | 'start' | 'text' | 'self-closing' | null => {
+            for (let j = startIndex + 1; j < lines.length; j++) {
+              const trimmed = lines[j].trim()
+              if (!trimmed) continue
+              if (trimmed.startsWith('</')) return 'end'
+              if (trimmed.startsWith('<') && trimmed.endsWith('/>')) return 'self-closing'
+              if (trimmed.startsWith('<')) return 'start'
+              return 'text'
+            }
+            return null
+          }
+          
+          for (let i = 0; i < lines.length; i++) {
+            const trimmed = lines[i].trim()
+            if (!trimmed) continue
+            
+            // 处理结束标签：先减少缩进，然后添加（结束标签应该和对应的开始标签同级）
+            if (trimmed.startsWith('</')) {
+              indentLevel = Math.max(0, indentLevel - 1)
+              result.push(' '.repeat(indentLevel * indentSize) + trimmed)
+            }
+            // 处理自闭合标签：使用当前缩进，不改变缩进级别
+            else if (trimmed.endsWith('/>')) {
+              result.push(' '.repeat(indentLevel * indentSize) + trimmed)
+            }
+            // 处理开始标签
+            else if (trimmed.startsWith('<') && !trimmed.startsWith('</')) {
+              result.push(' '.repeat(indentLevel * indentSize) + trimmed)
+              const nextType = getNextNonEmptyLineType(i)
+              // 如果不是自闭合标签，且有内容（下一个不是结束标签），则增加缩进级别
+              // 这样文本内容和嵌套的子元素都会有正确的缩进
+              if (!trimmed.endsWith('/>') && nextType !== null && nextType !== 'end') {
+                indentLevel++
+              }
+            }
+            // 文本内容：使用当前缩进级别（在标签内部，比开始标签多一级）
+            else {
+              result.push(' '.repeat(indentLevel * indentSize) + trimmed)
+            }
+          }
+          
+          return result.join('\n')
+        }
+        
+        xmlString = formatXML(xmlString)
+      }
+      
+      // 添加 XML 声明（如果还没有）
+      if (!xmlString.startsWith('<?xml')) {
+        xmlString = '<?xml version="1.0" encoding="UTF-8"?>\n' + xmlString
+      }
+      
+      const blob = new Blob([xmlString], { type: 'application/xml;charset=utf-8' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -458,7 +762,10 @@ export default function YAMLVisualizer({
       if (!exportFileName || exportFileName === '未命名文件') {
         exportFileName = '未命名文件.xml'
       } else {
-        exportFileName = exportFileName.replace(/\.(yaml|yml)$/i, '.xml')
+        exportFileName = exportFileName.replace(/\.(yaml|yml|json|toml)$/i, '.xml')
+        if (!exportFileName.endsWith('.xml')) {
+          exportFileName += '.xml'
+        }
       }
       a.download = exportFileName
       document.body.appendChild(a)
@@ -468,6 +775,7 @@ export default function YAMLVisualizer({
       setShowExportMenu(false)
     } catch (error) {
       alert(`导出 XML 失败: ${error instanceof Error ? error.message : '未知错误'}`)
+      console.error('导出 XML 错误:', error)
     }
   }, [data, editingFileName])
 
@@ -738,6 +1046,7 @@ export default function YAMLVisualizer({
                 onChange={onDataChange}
                 searchQuery={searchQuery}
                 onMatchCountChange={setMatchCount}
+                commentsMap={commentsMap}
               />
             </div>
           </div>

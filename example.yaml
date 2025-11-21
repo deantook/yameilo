@@ -1,25 +1,25 @@
 # 示例配置文件
 app:
-  name: "YAML 可视化工具"
-  version: "1.0.0"
-  debug: false
+  name: "YAML 可视化工具"  # 应用名称
+  version: "1.0.0"  # 版本号
+  debug: false  # 调试模式
   
 server:
-  host: "localhost"
-  port: 3000
+  host: "localhost"  # 服务器主机地址
+  port: 3000  # 服务器端口
   ssl:
-    enabled: true
-    cert: "/path/to/cert.pem"
-    key: "/path/to/key.pem"
+    enabled: true  # 是否启用 SSL
+    cert: "/path/to/cert.pem"  # SSL 证书路径
+    key: "/path/to/key.pem"  # SSL 私钥路径
 
 database:
-  type: "postgresql"
-  host: "localhost"
-  port: 5432
-  name: "mydb"
+  type: "postgresql"  # 数据库类型
+  host: "localhost"  # 数据库主机
+  port: 5432  # 数据库端口
+  name: "mydb"  # 数据库名称
   credentials:
-    username: "admin"
-    password: "secret123"
+    username: "admin"  # 用户名
+    password: "secret123"  # 密码
 
 features:
   - "feature1"
@@ -27,11 +27,11 @@ features:
   - "feature3"
 
 logging:
-  level: "info"
-  format: "json"
+  level: "info"  # 日志级别
+  format: "json"  # 日志格式
   outputs:
-    - type: "file"
-      path: "/var/log/app.log"
-    - type: "console"
-      enabled: true
+    - type: "file"  # 文件输出
+      path: "/var/log/app.log"  # 日志文件路径
+    - type: "console"  # 控制台输出
+      enabled: true  # 是否启用
 
