@@ -63,40 +63,21 @@ export default function YAMLVisualizer({
           const keyAny = pair.key as any
           const pairAny = pair as any
           let foundComment = null
-          let commentSource = ''
           
           // 检查 key 节点的注释
           if (keyAny.comment) {
             foundComment = keyAny.comment
-            commentSource = 'key.comment'
           } else if (keyAny.commentAfter) {
             foundComment = keyAny.commentAfter
-            commentSource = 'key.commentAfter'
           }
           
           // 如果 key 没有注释，检查 Pair 的注释
           if (!foundComment) {
             if (pairAny.comment) {
               foundComment = pairAny.comment
-              commentSource = 'pair.comment'
             } else if (pairAny.commentAfter) {
               foundComment = pairAny.commentAfter
-              commentSource = 'pair.commentAfter'
             }
-          }
-          
-          // 调试：打印所有注释属性
-          if (keyPath === 'app') {
-            console.log(`调试 [${keyPath}]:`, {
-              keyComment: keyAny.comment,
-              keyCommentAfter: keyAny.commentAfter,
-              keyCommentBefore: keyAny.commentBefore,
-              pairComment: pairAny.comment,
-              pairCommentAfter: pairAny.commentAfter,
-              pairCommentBefore: pairAny.commentBefore,
-              foundComment,
-              commentSource
-            })
           }
           
           if (foundComment) {
@@ -113,7 +94,6 @@ export default function YAMLVisualizer({
             
             if (commentText.trim()) {
               comments.set(keyPath, commentText.trim())
-              console.log(`找到键注释 [${keyPath}] (来源: ${commentSource}):`, commentText.trim())
             }
           }
           
@@ -136,7 +116,6 @@ export default function YAMLVisualizer({
                 
                 if (commentText.trim()) {
                   comments.set(keyPath, commentText.trim())
-                  console.log(`找到 Map commentBefore 注释 [${keyPath}]:`, commentText.trim())
                   foundComment = valueAny.commentBefore
                 }
               }
@@ -164,7 +143,6 @@ export default function YAMLVisualizer({
                 
                 if (commentText.trim()) {
                   comments.set(keyPath, commentText.trim())
-                  console.log(`找到值注释 [${keyPath}]:`, commentText.trim())
                 }
               }
             }
@@ -186,10 +164,16 @@ export default function YAMLVisualizer({
           const itemAny = item as any
           const itemComment = itemAny.comment || itemAny.commentAfter || itemAny.commentBefore
           if (itemComment) {
-            const commentText = typeof itemComment === 'string' ? itemComment : itemComment?.toString() || ''
+            let commentText = ''
+            if (typeof itemComment === 'string') {
+              commentText = itemComment
+            } else if (itemComment && typeof itemComment === 'object') {
+              commentText = (itemComment as any).text || (itemComment as any).comment || itemComment.toString() || ''
+            } else {
+              commentText = String(itemComment)
+            }
             if (commentText.trim()) {
               comments.set(itemPath, commentText.trim())
-              console.log(`找到数组项注释 [${itemPath}]:`, commentText.trim())
             }
           }
           
@@ -202,10 +186,16 @@ export default function YAMLVisualizer({
       const nodeAny = node as any
       const scalarComment = nodeAny.comment || nodeAny.commentAfter || nodeAny.commentBefore
       if (scalarComment && path) {
-        const commentText = typeof scalarComment === 'string' ? scalarComment : scalarComment?.toString() || ''
+        let commentText = ''
+        if (typeof scalarComment === 'string') {
+          commentText = scalarComment
+        } else if (scalarComment && typeof scalarComment === 'object') {
+          commentText = (scalarComment as any).text || (scalarComment as any).comment || scalarComment.toString() || ''
+        } else {
+          commentText = String(scalarComment)
+        }
         if (commentText.trim()) {
           comments.set(path, commentText.trim())
-          console.log(`找到标量注释 [${path}]:`, commentText.trim())
         }
       }
     }
@@ -221,7 +211,6 @@ export default function YAMLVisualizer({
         const doc = YAML.parseDocument(yamlText)
         if (doc.contents) {
           const comments = extractComments(doc.contents)
-          console.log('提取的注释:', Array.from(comments.entries()))
           setCommentsMap(comments)
           // 同时更新 yamlDocRef
           yamlDocRef.current = doc
@@ -232,7 +221,6 @@ export default function YAMLVisualizer({
         // 解析失败时，尝试使用 yamlDocRef
         if (yamlDocRef.current?.contents) {
           const comments = extractComments(yamlDocRef.current.contents)
-          console.log('从 yamlDocRef 提取的注释:', Array.from(comments.entries()))
           setCommentsMap(comments)
         } else {
           setCommentsMap(new Map())
@@ -240,7 +228,6 @@ export default function YAMLVisualizer({
       }
     } else if (yamlDocRef.current?.contents) {
       const comments = extractComments(yamlDocRef.current.contents)
-      console.log('从 yamlDocRef 提取的注释:', Array.from(comments.entries()))
       setCommentsMap(comments)
     } else {
       setCommentsMap(new Map())
@@ -274,24 +261,77 @@ export default function YAMLVisualizer({
       
       // 创建键到旧 Pair 的映射
       const oldPairs = new Map<string, YAML.Pair>()
+      // 同时创建一个值到 Pair 的映射，用于处理键名改变的情况（仅用于简单标量值）
+      const valueToPairMap = new Map<string, YAML.Pair>()
+      const usedPairs = new Set<YAML.Pair>() // 跟踪已使用的 Pair
+      
       oldMap.items.forEach(pair => {
         if (YAML.isScalar(pair.key)) {
           const key = (pair.key as YAML.Scalar).value as string
           oldPairs.set(key, pair)
+          // 如果值是简单标量（字符串、数字、布尔值），也通过值来索引（用于键名改变时匹配）
+          if (pair.value && YAML.isScalar(pair.value)) {
+            const scalarValue = (pair.value as YAML.Scalar).value
+            // 只对简单类型建立值映射
+            if (typeof scalarValue === 'string' || typeof scalarValue === 'number' || typeof scalarValue === 'boolean') {
+              const valueStr = String(scalarValue)
+              // 使用更精确的键来避免冲突：值类型+值内容
+              const valueKey = `${typeof scalarValue}:${valueStr}`
+              if (!valueToPairMap.has(valueKey)) {
+                valueToPairMap.set(valueKey, pair)
+              }
+            }
+          }
         }
       })
       
       // 更新或添加键值对
       Object.keys(newValue).forEach(key => {
-        const oldPair = oldPairs.get(key)
+        let oldPair = oldPairs.get(key)
+        
+        // 如果找不到旧 Pair（可能是键名改变了），尝试通过值来匹配（仅对简单标量值）
+        if (!oldPair && (typeof newValue[key] === 'string' || typeof newValue[key] === 'number' || typeof newValue[key] === 'boolean')) {
+          const valueKey = `${typeof newValue[key]}:${String(newValue[key])}`
+          const matchedPair = valueToPairMap.get(valueKey)
+          
+          // 只有当匹配的 Pair 的值也匹配，且该 Pair 未被使用，且旧键不在新数据中时才使用
+          if (matchedPair && !usedPairs.has(matchedPair)) {
+            const matchedKey = matchedPair.key && YAML.isScalar(matchedPair.key) 
+              ? (matchedPair.key as YAML.Scalar).value as string 
+              : null
+            // 如果旧键不在新数据中，说明键名改变了
+            if (matchedKey && !(matchedKey in newValue)) {
+              oldPair = matchedPair
+              usedPairs.add(matchedPair)
+            }
+          }
+        } else if (oldPair) {
+          usedPairs.add(oldPair)
+        }
+        
         const oldValue = (oldPair?.value as YAML.Node | undefined) || null
         const newValueNode = updateNodeValue(oldValue, newValue[key])
         
         if (newValueNode) {
-          const newPair = new YAML.Pair(
-            oldPair?.key || valueToNode(key) as YAML.Scalar,
-            newValueNode
-          )
+          // 如果找到了旧 Pair，使用旧 key 节点（保留 key 的注释），否则创建新的 key
+          let newKeyNode: YAML.Scalar
+          if (oldPair && oldPair.key && YAML.isScalar(oldPair.key)) {
+            // 创建新的 key 节点，但保留旧 key 的注释
+            const oldKey = oldPair.key as YAML.Scalar
+            newKeyNode = valueToNode(key) as YAML.Scalar
+            const oldKeyAny = oldKey as any
+            const newKeyAny = newKeyNode as any
+            // 复制 key 的所有注释属性
+            if (oldKeyAny.commentBefore) newKeyAny.commentBefore = oldKeyAny.commentBefore
+            if (oldKeyAny.comment) newKeyAny.comment = oldKeyAny.comment
+            if (oldKeyAny.commentAfter) newKeyAny.commentAfter = oldKeyAny.commentAfter
+            // 更新 key 的值
+            newKeyNode.value = key
+          } else {
+            newKeyNode = valueToNode(key) as YAML.Scalar
+          }
+          
+          const newPair = new YAML.Pair(newKeyNode, newValueNode)
           
           // 保留 Pair 的注释（使用类型断言，因为类型定义可能不完整）
           if (oldPair) {
@@ -299,16 +339,7 @@ export default function YAMLVisualizer({
             const newPairAny = newPair as any
             if (oldPairAny.commentBefore) newPairAny.commentBefore = oldPairAny.commentBefore
             if (oldPairAny.comment) newPairAny.comment = oldPairAny.comment
-            // 保留 key 的注释
-            if (oldPair.key && YAML.isScalar(oldPair.key)) {
-              const oldKey = oldPair.key as YAML.Scalar
-              const oldKeyAny = oldKey as any
-              if (YAML.isScalar(newPair.key)) {
-                const newKeyAny = newPair.key as any
-                if (oldKeyAny.commentBefore) newKeyAny.commentBefore = oldKeyAny.commentBefore
-                if (oldKeyAny.comment) newKeyAny.comment = oldKeyAny.comment
-              }
-            }
+            if (oldPairAny.commentAfter) newPairAny.commentAfter = oldPairAny.commentAfter
           }
           
           newMap.items.push(newPair)

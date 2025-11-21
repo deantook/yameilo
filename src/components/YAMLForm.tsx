@@ -893,16 +893,6 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
         const value = data[key]
         const itemPath = path ? `${path}.${key}` : key
         const fullKey = path ? `${path}.${key}` : key
-        // 调试：检查注释
-        if (key === 'app') {
-          console.log(`调试 YAMLForm [${itemPath}]:`, {
-            itemPath,
-            hasComment: commentsMap.has(itemPath),
-            comment: commentsMap.get(itemPath),
-            commentsMapSize: commentsMap.size,
-            allComments: Array.from(commentsMap.entries())
-          })
-        }
         const isExpanded = expanded.has(fullKey)
         const isObject = typeof value === 'object' && value !== null && !Array.isArray(value)
         const isNestedArray = Array.isArray(value)
