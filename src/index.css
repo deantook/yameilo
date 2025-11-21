@@ -1,6 +1,6 @@
 :root {
   /* 亮色主题变量 - 现代清新风格 */
-  --bg-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --bg-primary: #ffffff;
   --bg-secondary: #ffffff;
   --bg-tertiary: #f1f5f9;
   --bg-hover: #e2e8f0;
@@ -24,7 +24,7 @@
 
 [data-theme="dark"] {
   /* 暗色主题变量 - VS Code Dark+ 风格 */
-  --bg-primary: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  --bg-primary: #1e1e1e;
   --bg-secondary: #1e1e1e;
   --bg-tertiary: #252526;
   --bg-hover: #2d2d30;
