@@ -282,7 +282,7 @@
   box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
 }
 
-.copy-path-btn {
+.locate-btn {
   background: var(--primary-color);
   color: white;
   border: none;
@@ -298,6 +298,35 @@
   flex-shrink: 0;
   opacity: 0.85;
   margin-left: auto;
+}
+
+.locate-btn:hover {
+  opacity: 1;
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  background: var(--primary-hover);
+}
+
+.locate-btn svg {
+  flex-shrink: 0;
+}
+
+.copy-path-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.1875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  opacity: 0.85;
+  margin-left: 0.25rem;
 }
 
 .copy-path-btn:hover {
@@ -583,6 +612,125 @@
 [data-theme="dark"] .search-match-input {
   background-color: #451a03 !important;
   border-color: var(--warning-color) !important;
+}
+
+/* 路径高亮样式 */
+.path-highlighted {
+  position: relative;
+  animation: pathHighlightAppear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  background-color: rgba(59, 130, 246, 0.2) !important;
+  border: 2px solid rgba(59, 130, 246, 0.5) !important;
+  border-radius: 6px;
+  padding: 0.25rem;
+  margin: -0.25rem;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  z-index: 10;
+  transition: background-color 0.4s ease-out, border-color 0.4s ease-out, box-shadow 0.4s ease-out;
+}
+
+.path-highlighted::before {
+  content: '';
+  position: absolute;
+  left: -0.75rem;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--primary-color);
+  border-radius: 2px;
+  animation: pathHighlightIndicatorAppear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+  transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+}
+
+/* 高亮消失动画 */
+.path-highlighted.path-highlighted-fadeout {
+  animation: pathHighlightDisappear 0.4s ease-in forwards;
+}
+
+.path-highlighted.path-highlighted-fadeout::before {
+  animation: pathHighlightIndicatorDisappear 0.4s ease-in forwards;
+}
+
+[data-theme="dark"] .path-highlighted {
+  background-color: rgba(59, 130, 246, 0.25) !important;
+  border-color: rgba(59, 130, 246, 0.6) !important;
+}
+
+[data-theme="dark"] .path-highlighted::before {
+  background: var(--primary-color);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.8);
+}
+
+/* 高亮出现动画 */
+@keyframes pathHighlightAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(-2px);
+    background-color: rgba(59, 130, 246, 0);
+    border-color: rgba(59, 130, 246, 0);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.02) translateY(0);
+    background-color: rgba(59, 130, 246, 0.25);
+    border-color: rgba(59, 130, 246, 0.6);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    background-color: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+}
+
+/* 左侧指示条出现动画 */
+@keyframes pathHighlightIndicatorAppear {
+  0% {
+    opacity: 0;
+    transform: scaleY(0);
+    transform-origin: center;
+  }
+  60% {
+    opacity: 1;
+    transform: scaleY(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+/* 高亮消失动画 */
+@keyframes pathHighlightDisappear {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    background-color: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.98) translateY(-2px);
+    background-color: rgba(59, 130, 246, 0);
+    border-color: rgba(59, 130, 246, 0);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+/* 左侧指示条消失动画 */
+@keyframes pathHighlightIndicatorDisappear {
+  0% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleY(0);
+  }
 }
 
 .inline-comment {

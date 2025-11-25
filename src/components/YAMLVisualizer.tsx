@@ -46,6 +46,7 @@ export default function YAMLVisualizer({
   const exportMenuRef = useRef<HTMLDivElement>(null)
   const yamlDocRef = useRef<YAML.Document | null>(null) // 保存 YAML 文档以保留注释
   const [commentsMap, setCommentsMap] = useState<Map<string, string>>(new Map()) // 存储路径到注释的映射
+  const [highlightedPath, setHighlightedPath] = useState<string | null>(null) // 存储当前高亮的路径
 
   // 提取注释信息：递归遍历 YAML 节点，提取所有路径的注释
   const extractComments = useCallback((node: YAML.Node | null, path: string = '', comments: Map<string, string> = new Map()): Map<string, string> => {
@@ -806,7 +807,6 @@ export default function YAMLVisualizer({
       setShowExportMenu(false)
     } catch (error) {
       alert(`导出 XML 失败: ${error instanceof Error ? error.message : '未知错误'}`)
-      console.error('导出 XML 错误:', error)
     }
   }, [data, editingFileName])
 
@@ -1059,6 +1059,13 @@ export default function YAMLVisualizer({
               onChange={handleEditorChange}
               onParseError={setParseError}
               theme={theme}
+              onPathClick={(path) => {
+                setHighlightedPath(path)
+                // 10 秒后清除高亮（给用户足够的时间查看）
+                setTimeout(() => {
+                  setHighlightedPath(null)
+                }, 10000)
+              }}
             />
           </div>
           <div className="form-panel">
@@ -1078,6 +1085,10 @@ export default function YAMLVisualizer({
                 searchQuery={searchQuery}
                 onMatchCountChange={setMatchCount}
                 commentsMap={commentsMap}
+                highlightedPath={highlightedPath}
+                onLocatePath={(path) => {
+                  editorRef.current?.locatePath(path)
+                }}
               />
             </div>
           </div>

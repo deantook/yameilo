@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
-import { ChevronDownIcon, ChevronRightIcon, DeleteIcon, PlusIcon, DragHandleIcon, CopyIcon } from './Icons'
+import { ChevronDownIcon, ChevronRightIcon, DeleteIcon, PlusIcon, DragHandleIcon, CopyIcon, LocateIcon } from './Icons'
 import './YAMLForm.css'
 
 interface YAMLFormProps {
@@ -11,6 +11,8 @@ interface YAMLFormProps {
   searchQuery?: string
   onMatchCountChange?: (count: number) => void
   commentsMap?: Map<string, string>
+  highlightedPath?: string | null
+  onLocatePath?: (path: string) => void
 }
 
 export interface YAMLFormHandle {
@@ -18,22 +20,35 @@ export interface YAMLFormHandle {
   collapseAll: () => void
 }
 
-const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, path = '', expanded: expandedProp, onExpandedChange, searchQuery = '', onMatchCountChange, commentsMap = new Map() }, ref) => {
+const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, path = '', expanded: expandedProp, onExpandedChange, searchQuery = '', onMatchCountChange, commentsMap = new Map(), highlightedPath, onLocatePath }, ref) => {
   // 如果提供了 expanded prop，使用它；否则使用本地状态（用于嵌套组件）
   const [localExpanded, setLocalExpanded] = useState<Set<string>>(new Set())
   const expanded = expandedProp !== undefined ? expandedProp : localExpanded
   
+  // 使用 ref 存储 onExpandedChange，避免依赖问题
+  const onExpandedChangeRef = useRef(onExpandedChange)
+  useEffect(() => {
+    onExpandedChangeRef.current = onExpandedChange
+  }, [onExpandedChange])
+  
   // 统一的 setExpanded 函数，处理两种情况
   const setExpanded = useCallback((value: Set<string> | ((prev: Set<string>) => Set<string>)) => {
-    if (onExpandedChange) {
-      // 如果提供了 onExpandedChange，直接调用
-      const newValue = typeof value === 'function' ? value(expanded) : value
-      onExpandedChange(newValue)
+    if (onExpandedChangeRef.current) {
+      // 如果提供了 onExpandedChange，需要先获取当前值
+      // 使用函数式更新来避免依赖 expanded
+      if (typeof value === 'function') {
+        // 从 expandedProp 获取当前值（如果可用），否则使用空 Set
+        const currentValue = expandedProp !== undefined ? expandedProp : new Set<string>()
+        const newValue = value(currentValue)
+        onExpandedChangeRef.current(newValue)
+      } else {
+        onExpandedChangeRef.current(value)
+      }
     } else {
       // 否则使用本地状态更新
       setLocalExpanded(value)
     }
-  }, [onExpandedChange, expanded])
+  }, [expandedProp])
   const [showAddMenuArray, setShowAddMenuArray] = useState(false)
   const [showAddMenuObject, setShowAddMenuObject] = useState(false)
   const [showTypeMenu, setShowTypeMenu] = useState<Set<string>>(new Set())
@@ -41,6 +56,9 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
   const addMenuObjectRef = useRef<HTMLDivElement>(null)
   const typeMenuRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const keyInputRefs = useRef<Map<string, HTMLInputElement>>(new Map())
+  const pathElementRefs = useRef<Map<string, HTMLElement>>(new Map())
+  const currentHighlightedElementRef = useRef<HTMLElement | null>(null) // 跟踪当前高亮的元素
+  const fadeOutTimeoutRef = useRef<number | null>(null) // 跟踪淡出定时器
   const [draggedIndex, setDraggedIndex] = useState<number | string | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | string | null>(null)
 
@@ -247,6 +265,218 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
       onMatchCountChange(count)
     }
   }, [searchQuery, data, path, countMatches, onMatchCountChange])
+
+  // 清除高亮的辅助函数
+  const clearHighlight = useCallback(() => {
+    // 清除之前的定时器
+    if (fadeOutTimeoutRef.current !== null) {
+      clearTimeout(fadeOutTimeoutRef.current)
+      fadeOutTimeoutRef.current = null
+    }
+    
+    const fadeOutElements: HTMLElement[] = []
+    
+    // 从 ref 中查找
+    if (currentHighlightedElementRef.current) {
+      fadeOutElements.push(currentHighlightedElementRef.current)
+    }
+    
+    // 从 pathElementRefs 中查找
+    pathElementRefs.current.forEach((el) => {
+      if (el.classList.contains('path-highlighted') && !fadeOutElements.includes(el)) {
+        fadeOutElements.push(el)
+      }
+    })
+    
+    // 通过 data-path 属性查找
+    document.querySelectorAll('[data-path].path-highlighted').forEach((el) => {
+      if (!fadeOutElements.includes(el as HTMLElement)) {
+        fadeOutElements.push(el as HTMLElement)
+      }
+    })
+    
+    if (fadeOutElements.length === 0) return
+    
+    // 添加淡出类（确保淡出动画总是执行）
+    fadeOutElements.forEach((el) => {
+      // 先移除高亮类，添加淡出类
+      el.classList.remove('path-highlighted')
+      el.classList.add('path-highlighted-fadeout')
+    })
+    
+    // 等待动画完成后移除（总是等待动画完成，确保动画可见）
+    fadeOutTimeoutRef.current = window.setTimeout(() => {
+      fadeOutElements.forEach((el) => {
+        el.classList.remove('path-highlighted', 'path-highlighted-fadeout')
+        el.style.removeProperty('background-color')
+        el.style.removeProperty('border')
+      })
+      currentHighlightedElementRef.current = null
+      fadeOutTimeoutRef.current = null
+    }, 400) // 固定等待 400ms，确保淡出动画完成
+  }, [])
+
+  // 处理路径高亮和滚动定位（只在顶层执行）
+  useEffect(() => {
+    // 当 highlightedPath 为 null 时，清除所有高亮（使用淡出动画）
+    if (!highlightedPath) {
+      if (!path) {
+        clearHighlight()
+      }
+      return
+    }
+    
+    if (path) return // 只在顶层执行
+
+    // 先清除之前的高亮（使用淡出动画）
+    clearHighlight()
+
+    // 先展开父级路径，然后查找元素
+    const pathParts = highlightedPath.split(/[\.\[\]]/).filter(Boolean)
+    let currentPath = ''
+    const pathsToExpand = new Set<string>()
+    
+    // 构建需要展开的路径
+    for (let i = 0; i < pathParts.length - 1; i++) {
+      const part = pathParts[i]
+      if (i === 0) {
+        currentPath = part
+      } else {
+        // 检查是否是数组索引（纯数字）
+        const numPart = parseInt(part)
+        if (!isNaN(numPart) && part === String(numPart)) {
+          // 这是数组索引
+          currentPath = `${currentPath}[${part}]`
+        } else {
+          currentPath = `${currentPath}.${part}`
+        }
+      }
+      if (currentPath) {
+        pathsToExpand.add(currentPath)
+      }
+    }
+    
+    // 展开所有父级路径
+    if (pathsToExpand.size > 0) {
+      setExpanded((prev) => {
+        // 检查是否所有路径都已经展开，避免不必要的更新
+        let needsUpdate = false
+        for (const p of pathsToExpand) {
+          if (!prev.has(p)) {
+            needsUpdate = true
+            break
+          }
+        }
+        if (!needsUpdate) {
+          return prev // 返回相同的引用，避免触发更新
+        }
+        const next = new Set(prev)
+        pathsToExpand.forEach(p => next.add(p))
+        return next
+      })
+    }
+    
+    // 查找元素的函数
+    const findElement = (targetPath: string): HTMLElement | undefined => {
+      // 1. 直接精确匹配
+      let element = pathElementRefs.current.get(targetPath)
+      if (element) return element
+      
+      // 2. 尝试所有存储的路径，找到完全匹配的
+      for (const [storedPath, el] of pathElementRefs.current.entries()) {
+        if (storedPath === targetPath) {
+          return el
+        }
+      }
+      
+      // 3. 尝试通过 data-path 属性查找（更可靠的方法）
+      const elements = document.querySelectorAll(`[data-path="${targetPath}"]`)
+      if (elements.length > 0) {
+        return elements[0] as HTMLElement
+      }
+      
+      // 4. 尝试部分匹配（处理可能的路径格式差异）
+      // 例如：targetPath = "services.web.volumes[0]", storedPath = "volumes[0]"
+      const targetParts = targetPath.split(/[\.\[\]]/).filter(Boolean)
+      for (const [storedPath, el] of pathElementRefs.current.entries()) {
+        const storedParts = storedPath.split(/[\.\[\]]/).filter(Boolean)
+        // 检查是否是目标路径的后缀
+        if (storedParts.length > 0 && targetParts.length >= storedParts.length) {
+          const targetSuffix = targetParts.slice(-storedParts.length)
+          if (targetSuffix.join('.') === storedParts.join('.')) {
+            // 需要重新构建完整路径来匹配
+            const fullStoredPath = targetPath.substring(0, targetPath.lastIndexOf(storedPath)) + storedPath
+            if (fullStoredPath === targetPath || storedPath === targetPath) {
+              return el
+            }
+          }
+        }
+      }
+      
+      return undefined
+    }
+    
+    // 应用高亮和滚动的函数
+    const applyHighlight = (el: HTMLElement) => {
+      // 更新当前高亮元素的引用
+      currentHighlightedElementRef.current = el
+      
+      // 移除淡出类（如果有）
+      el.classList.remove('path-highlighted-fadeout')
+      
+      // 强制添加高亮类（通过直接 DOM 操作）
+      el.classList.add('path-highlighted')
+      
+      // 滚动到视图
+      setTimeout(() => {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        
+        // 再次确保高亮类存在（防止被 React 重新渲染覆盖）
+        setTimeout(() => {
+          el.classList.remove('path-highlighted-fadeout')
+          el.classList.add('path-highlighted')
+          currentHighlightedElementRef.current = el
+        }, 100)
+      }, 50)
+    }
+    
+    // 延迟一下，等待 DOM 更新（增加延迟时间，确保展开完成）
+    setTimeout(() => {
+      let element = findElement(highlightedPath)
+      
+      if (element) {
+        applyHighlight(element)
+      } else {
+        // 如果还是找不到，再等待一下（可能 DOM 还没完全更新）
+        setTimeout(() => {
+          element = findElement(highlightedPath)
+          if (element) {
+            applyHighlight(element)
+          } else {
+            // 最后一次重试，等待更长时间
+            setTimeout(() => {
+              element = findElement(highlightedPath)
+              if (element) {
+                applyHighlight(element)
+              }
+            }, 500)
+          }
+        }, 300)
+      }
+    }, 300)
+    
+    // 清理函数：当组件卸载或 highlightedPath 变化时清除高亮
+    return () => {
+      if (fadeOutTimeoutRef.current !== null) {
+        clearTimeout(fadeOutTimeoutRef.current)
+        fadeOutTimeoutRef.current = null
+      }
+      // 如果 highlightedPath 变为 null，确保清除高亮
+      if (!highlightedPath && !path) {
+        clearHighlight()
+      }
+    }
+  }, [highlightedPath, path, setExpanded, clearHighlight])
 
   // 获取值的类型
   const getValueType = useCallback((value: any): 'string' | 'number' | 'boolean' | 'object' | 'array' => {
@@ -748,7 +978,6 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
         document.execCommand('copy')
         showToast('已复制')
       } catch (fallbackErr) {
-        console.error('复制失败:', fallbackErr)
         showToast('复制失败，请手动复制')
       }
       document.body.removeChild(textArea)
@@ -855,10 +1084,20 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
           const isNestedArray = Array.isArray(item)
           const isMatch = matchesSearch(String(index), item, itemPath)
 
+          const isHighlighted = highlightedPath === itemPath
+          
           return (
             <div 
               key={index} 
-              className={`yaml-form-array-item ${draggedIndex === index ? 'dragging' : ''} ${dragOverIndex === index ? 'drag-over' : ''} ${isMatch ? 'search-match' : ''}`}
+              ref={(el) => {
+                if (el) {
+                  pathElementRefs.current.set(itemPath, el)
+                } else {
+                  pathElementRefs.current.delete(itemPath)
+                }
+              }}
+              data-path={itemPath}
+              className={`yaml-form-array-item ${draggedIndex === index ? 'dragging' : ''} ${dragOverIndex === index ? 'drag-over' : ''} ${isMatch ? 'search-match' : ''} ${isHighlighted ? 'path-highlighted' : ''}`}
               draggable
               onDragStart={(e) => handleArrayDragStart(e, index)}
               onDragOver={(e) => handleArrayDragOver(e, index)}
@@ -912,7 +1151,20 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                     searchQuery={searchQuery}
                     onMatchCountChange={onMatchCountChange}
                     commentsMap={commentsMap}
+                    onLocatePath={onLocatePath}
                   />
+                )}
+                {onLocatePath && (
+                  <button
+                    className="locate-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onLocatePath(itemPath)
+                    }}
+                    title="定位到编辑器"
+                  >
+                    <LocateIcon size={14} />
+                  </button>
                 )}
                 <button
                   className="copy-path-btn"
@@ -943,13 +1195,14 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                     searchQuery={searchQuery}
                     onMatchCountChange={onMatchCountChange}
                     commentsMap={commentsMap}
+                    onLocatePath={onLocatePath}
                   />
                 </div>
               )}
             </div>
           )
         })
-        )}
+      )}
         {(!searchQuery || filteredItems.length > 0) && (
           <div className="add-item-container" ref={addMenuArrayRef}>
           <button 
@@ -1013,10 +1266,20 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
         const isNestedArray = Array.isArray(value)
         const isMatch = matchesSearch(key, value, itemPath)
 
+        const isHighlighted = highlightedPath === itemPath
+        
         return (
           <div 
-            key={key} 
-            className={`yaml-form-object-item ${draggedIndex === key ? 'dragging' : ''} ${dragOverIndex === key ? 'drag-over' : ''} ${isMatch ? 'search-match' : ''}`}
+            key={key}
+            ref={(el) => {
+              if (el) {
+                pathElementRefs.current.set(itemPath, el)
+              } else {
+                pathElementRefs.current.delete(itemPath)
+              }
+            }}
+            data-path={itemPath}
+            className={`yaml-form-object-item ${draggedIndex === key ? 'dragging' : ''} ${dragOverIndex === key ? 'drag-over' : ''} ${isMatch ? 'search-match' : ''} ${isHighlighted ? 'path-highlighted' : ''}`}
             draggable
             onDragStart={(e) => handleObjectDragStart(e, key)}
             onDragOver={(e) => handleObjectDragOver(e, key)}
@@ -1102,7 +1365,20 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                   searchQuery={searchQuery}
                   onMatchCountChange={onMatchCountChange}
                   commentsMap={commentsMap}
+                  onLocatePath={onLocatePath}
                 />
+              )}
+              {onLocatePath && (
+                <button
+                  className="locate-btn"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onLocatePath(itemPath)
+                  }}
+                  title="定位到编辑器"
+                >
+                  <LocateIcon size={14} />
+                </button>
               )}
               <button
                 className="copy-path-btn"
@@ -1130,11 +1406,12 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                   path={itemPath}
                   expanded={expanded}
                   onExpandedChange={setExpanded}
-                  searchQuery={searchQuery}
-                  onMatchCountChange={onMatchCountChange}
-                  commentsMap={commentsMap}
-                />
-              </div>
+                    searchQuery={searchQuery}
+                    onMatchCountChange={onMatchCountChange}
+                    commentsMap={commentsMap}
+                    onLocatePath={onLocatePath}
+                  />
+                </div>
             )}
           </div>
         )

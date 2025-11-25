@@ -249,7 +249,6 @@ export default function TemplateManager({ currentData, onApplyTemplate, onSaveAs
         setUserTemplates(templates)
       }
     } catch (error) {
-      console.error('Failed to load templates:', error)
     }
   }, [])
 
@@ -259,7 +258,6 @@ export default function TemplateManager({ currentData, onApplyTemplate, onSaveAs
       localStorage.setItem(STORAGE_KEY, JSON.stringify(templates))
       setUserTemplates(templates)
     } catch (error) {
-      console.error('Failed to save templates:', error)
       alert('保存模板失败，可能是存储空间不足')
     }
   }, [])
