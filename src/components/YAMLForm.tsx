@@ -876,7 +876,19 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
                 </div>
                 <button
                   className="expand-btn"
-                  onClick={() => toggleExpand(String(index))}
+                  onClick={() => {
+                    // 对于数组项，需要使用完整路径格式 path[index]
+                    const arrayKey = path ? `${path}[${index}]` : String(index)
+                    setExpanded((prev: Set<string>) => {
+                      const next = new Set(prev)
+                      if (next.has(arrayKey)) {
+                        next.delete(arrayKey)
+                      } else {
+                        next.add(arrayKey)
+                      }
+                      return next
+                    })
+                  }}
                   style={{ visibility: isObject || isNestedArray ? 'visible' : 'hidden' }}
                 >
                   {isExpanded ? <ChevronDownIcon size={12} /> : <ChevronRightIcon size={12} />}
