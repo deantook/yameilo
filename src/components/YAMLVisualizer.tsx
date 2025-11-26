@@ -7,7 +7,7 @@ import YAMLForm, { YAMLFormHandle } from './YAMLForm'
 import YAMLEditor, { YAMLEditorHandle } from './YAMLEditor'
 import StatsPanel from './StatsPanel'
 import TemplateManager from './TemplateManager'
-import { FileIcon, SortIcon, SaveIcon, ReloadIcon, UploadIcon, ChevronDownIcon, ChevronRightIcon, FormatIcon, SearchIcon, CloseIcon, MoonIcon, SunIcon, GitHubIcon, DownloadIcon, StatsIcon } from './Icons'
+import { SortIcon, SaveIcon, ReloadIcon, UploadIcon, ChevronDownIcon, ChevronRightIcon, FormatIcon, SearchIcon, CloseIcon, MoonIcon, SunIcon, GitHubIcon, DownloadIcon, StatsIcon } from './Icons'
 import './YAMLVisualizer.css'
 
 interface YAMLVisualizerProps {
@@ -849,7 +849,7 @@ export default function YAMLVisualizer({
       <div className="yaml-visualizer">
         <div className="toolbar">
           <div className="toolbar-left">
-            <FileIcon className="file-icon" size={16} />
+            <img src={`${import.meta.env.BASE_URL}yaml.ico`} className="file-icon" alt="YAML" style={{ width: 16, height: 16 }} />
             {isEditingFileName ? (
               <input
                 ref={fileNameInputRef}

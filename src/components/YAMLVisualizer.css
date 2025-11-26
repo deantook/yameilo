@@ -41,6 +41,7 @@
   color: var(--primary-color);
   flex-shrink: 0;
   transition: color 0.3s ease;
+  margin-left: 0.5rem;
 }
 
 .file-name {
