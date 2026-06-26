@@ -333,7 +333,6 @@ export default function TemplateManager({ currentData, onApplyTemplate, onSaveAs
           title="模板管理"
         >
           <PlusIcon size={14} />
-          <span>模板</span>
           <ChevronDownIcon size={12} />
         </button>
         {isOpen && (

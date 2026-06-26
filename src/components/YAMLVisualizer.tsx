@@ -931,16 +931,11 @@ export default function YAMLVisualizer({
               title="上传 YAML 文件"
             >
               <UploadIcon size={14} />
-              <span>上传文件</span>
             </button>
             <TemplateManager
               currentData={data}
               onApplyTemplate={handleApplyTemplate}
             />
-            <button className="btn btn-primary" onClick={handleSave}>
-              <SaveIcon size={14} />
-              <span>保存</span>
-            </button>
             
             {/* 导出菜单 */}
             <div className="export-menu-container" ref={exportMenuRef}>
@@ -950,7 +945,6 @@ export default function YAMLVisualizer({
                 title="导出为其他格式"
               >
                 <DownloadIcon size={14} />
-                <span>导出</span>
                 <ChevronDownIcon size={12} />
               </button>
               {showExportMenu && (
@@ -987,7 +981,6 @@ export default function YAMLVisualizer({
               title="格式化 YAML 代码"
             >
               <FormatIcon size={14} />
-              <span>格式化</span>
             </button>
             <button
               className="btn btn-secondary"
@@ -995,7 +988,6 @@ export default function YAMLVisualizer({
               title="按 key 字母顺序排序"
             >
               <SortIcon size={14} />
-              <span>排序</span>
             </button>
             
             {/* 视图操作组 */}
@@ -1014,7 +1006,6 @@ export default function YAMLVisualizer({
               title={isAllExpanded ? '全部折叠' : '全部展开'}
             >
               {isAllExpanded ? <ChevronDownIcon size={14} /> : <ChevronRightIcon size={14} />}
-              <span>{isAllExpanded ? '全部折叠' : '全部展开'}</span>
             </button>
             
             {/* 设置组 */}
@@ -1024,7 +1015,6 @@ export default function YAMLVisualizer({
               title={showStatsPanel ? '隐藏统计面板' : '显示统计面板'}
             >
               <StatsIcon size={14} />
-              <span>统计</span>
             </button>
             <button
               className="btn btn-secondary"
@@ -1032,7 +1022,6 @@ export default function YAMLVisualizer({
               title={theme === 'light' ? '切换到暗色主题' : '切换到亮色主题'}
             >
               {theme === 'light' ? <MoonIcon size={14} /> : <SunIcon size={14} />}
-              <span>{theme === 'light' ? '暗色' : '亮色'}</span>
             </button>
             
             {/* 其他操作 - 危险操作放在最后 */}
@@ -1047,7 +1036,11 @@ export default function YAMLVisualizer({
               title="清空当前编辑内容"
             >
               <ReloadIcon size={14} />
-              <span>清空</span>
+            </button>
+            
+            {/* 保存 - 放在最右侧 */}
+            <button className="btn btn-primary" onClick={handleSave} title="保存">
+              <SaveIcon size={14} />
             </button>
           </div>
         </div>

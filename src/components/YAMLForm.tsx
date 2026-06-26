@@ -267,31 +267,38 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
   }, [searchQuery, data, path, countMatches, onMatchCountChange])
 
   // 清除高亮的辅助函数
-  const clearHighlight = useCallback(() => {
+  // excludePath: 新的高亮目标路径，清除时跳过该元素，避免 React 已加上的新高亮被一并移除导致闪烁
+  const clearHighlight = useCallback((excludePath?: string | null) => {
     // 清除之前的定时器
     if (fadeOutTimeoutRef.current !== null) {
       clearTimeout(fadeOutTimeoutRef.current)
       fadeOutTimeoutRef.current = null
     }
     
+    const isExcluded = (el: HTMLElement): boolean => {
+      if (!excludePath) return false
+      return el.getAttribute('data-path') === excludePath
+    }
+    
     const fadeOutElements: HTMLElement[] = []
     
     // 从 ref 中查找
-    if (currentHighlightedElementRef.current) {
+    if (currentHighlightedElementRef.current && !isExcluded(currentHighlightedElementRef.current)) {
       fadeOutElements.push(currentHighlightedElementRef.current)
     }
     
     // 从 pathElementRefs 中查找
     pathElementRefs.current.forEach((el) => {
-      if (el.classList.contains('path-highlighted') && !fadeOutElements.includes(el)) {
+      if (el.classList.contains('path-highlighted') && !fadeOutElements.includes(el) && !isExcluded(el)) {
         fadeOutElements.push(el)
       }
     })
     
     // 通过 data-path 属性查找
     document.querySelectorAll('[data-path].path-highlighted').forEach((el) => {
-      if (!fadeOutElements.includes(el as HTMLElement)) {
-        fadeOutElements.push(el as HTMLElement)
+      const htmlEl = el as HTMLElement
+      if (!fadeOutElements.includes(htmlEl) && !isExcluded(htmlEl)) {
+        fadeOutElements.push(htmlEl)
       }
     })
     
@@ -328,8 +335,8 @@ const YAMLForm = forwardRef<YAMLFormHandle, YAMLFormProps>(({ data, onChange, pa
     
     if (path) return // 只在顶层执行
 
-    // 先清除之前的高亮（使用淡出动画）
-    clearHighlight()
+    // 先清除之前的高亮（使用淡出动画），跳过新目标元素避免闪烁
+    clearHighlight(highlightedPath)
 
     // 先展开父级路径，然后查找元素
     const pathParts = highlightedPath.split(/[\.\[\]]/).filter(Boolean)
