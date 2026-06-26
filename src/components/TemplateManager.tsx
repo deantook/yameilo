@@ -391,17 +391,6 @@ export default function TemplateManager({ currentData, onApplyTemplate }: Templa
         </button>
         {isOpen && (
           <div className="template-menu">
-            <div className="template-menu-header">
-              <span className="template-menu-title">配置模板</span>
-              <button
-                className="template-menu-close"
-                onClick={() => setIsOpen(false)}
-                title="关闭"
-              >
-                <CloseIcon size={14} />
-              </button>
-            </div>
-            
             <div className="template-menu-content">
               {/* 保存当前配置为模板 */}
               <div className="template-section">
@@ -414,48 +403,6 @@ export default function TemplateManager({ currentData, onApplyTemplate }: Templa
                 </button>
               </div>
 
-              {/* 预设模板 */}
-              {PRESET_TEMPLATES.length > 0 && (
-                <div className="template-section">
-                  <div className="template-section-title">预设模板</div>
-                  {PRESET_TEMPLATES.map(template => (
-                    <div key={template.id} className="template-item">
-                      <div className="template-item-info">
-                        <div className="template-item-name">{template.name}</div>
-                        {template.description && (
-                          <div className="template-item-desc">{template.description}</div>
-                        )}
-                      </div>
-                      {applyConfirmId === template.id ? (
-                        <div className="template-apply-confirm">
-                          <span className="template-apply-confirm-text">替换当前配置？</span>
-                          <button
-                            className="template-apply-confirm-yes"
-                            onClick={() => handleConfirmApply(template)}
-                          >
-                            确认
-                          </button>
-                          <button
-                            className="template-apply-confirm-no"
-                            onClick={() => setApplyConfirmId(null)}
-                          >
-                            取消
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          className="template-item-apply"
-                          onClick={() => handleApplyTemplate(template)}
-                          title="应用模板"
-                        >
-                          应用
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
               {/* 用户模板 */}
               {userTemplates.length > 0 && (
                 <div className="template-section">
@@ -466,11 +413,6 @@ export default function TemplateManager({ currentData, onApplyTemplate }: Templa
                         <div className="template-item-name">{template.name}</div>
                         {template.description && (
                           <div className="template-item-desc">{template.description}</div>
-                        )}
-                        {template.createdAt && (
-                          <div className="template-item-date">
-                            {new Date(template.createdAt).toLocaleDateString('zh-CN')}
-                          </div>
                         )}
                       </div>
                       <div className="template-item-actions">
@@ -524,6 +466,48 @@ export default function TemplateManager({ currentData, onApplyTemplate }: Templa
                           </button>
                         )}
                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 预设模板 */}
+              {PRESET_TEMPLATES.length > 0 && (
+                <div className="template-section">
+                  <div className="template-section-title">预设模板</div>
+                  {PRESET_TEMPLATES.map(template => (
+                    <div key={template.id} className="template-item">
+                      <div className="template-item-info">
+                        <div className="template-item-name">{template.name}</div>
+                        {template.description && (
+                          <div className="template-item-desc">{template.description}</div>
+                        )}
+                      </div>
+                      {applyConfirmId === template.id ? (
+                        <div className="template-apply-confirm">
+                          <span className="template-apply-confirm-text">替换当前配置？</span>
+                          <button
+                            className="template-apply-confirm-yes"
+                            onClick={() => handleConfirmApply(template)}
+                          >
+                            确认
+                          </button>
+                          <button
+                            className="template-apply-confirm-no"
+                            onClick={() => setApplyConfirmId(null)}
+                          >
+                            取消
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          className="template-item-apply"
+                          onClick={() => handleApplyTemplate(template)}
+                          title="应用模板"
+                        >
+                          应用
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
