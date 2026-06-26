@@ -82,9 +82,9 @@
 .template-save-btn {
   width: 100%;
   padding: 8px 12px;
-  background: #ffffff;
-  color: #000000;
-  border: 1px solid #ffffff;
+  background: #000000;
+  color: #ffffff;
+  border: 1px solid #000000;
   border-radius: var(--radius-sm);
   font-family: var(--font-sans);
   font-size: var(--text-sm);
@@ -97,11 +97,15 @@
   transition: background-color var(--speed-quick) var(--ease);
 }
 .template-save-btn:hover {
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(0, 0, 0, 0.88);
 }
 [data-theme="dark"] .template-save-btn {
   background: #ffffff;
   color: #000000;
+  border-color: #ffffff;
+}
+[data-theme="dark"] .template-save-btn:hover {
+  background: rgba(255, 255, 255, 0.88);
 }
 
 .template-item {

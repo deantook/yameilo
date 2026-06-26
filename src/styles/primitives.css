@@ -32,16 +32,20 @@
 }
 
 .btn-primary {
-  background: #ffffff;
-  color: #000000;
-  border-color: #ffffff;
+  background: #000000;
+  color: #ffffff;
+  border-color: #000000;
 }
 .btn-primary:hover {
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(0, 0, 0, 0.88);
 }
 [data-theme="dark"] .btn-primary {
   background: #ffffff;
   color: #000000;
+  border-color: #ffffff;
+}
+[data-theme="dark"] .btn-primary:hover {
+  background: rgba(255, 255, 255, 0.88);
 }
 
 .btn-accent {
