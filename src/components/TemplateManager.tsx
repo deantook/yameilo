@@ -239,6 +239,7 @@ export default function TemplateManager({ currentData, onApplyTemplate }: Templa
   const [templateDescription, setTemplateDescription] = useState('')
   const [userTemplates, setUserTemplates] = useState<Template[]>([])
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
+  const [overwriteConfirmName, setOverwriteConfirmName] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState<string>('')
   const toastTimeoutRef = useRef<number | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -285,8 +286,6 @@ export default function TemplateManager({ currentData, onApplyTemplate }: Templa
     }
   }, [])
 
-  void showToast
-
   // 应用模板
   const handleApplyTemplate = useCallback((template: Template) => {
     if (confirm('应用模板将替换当前配置，是否继续？')) {
@@ -295,30 +294,55 @@ export default function TemplateManager({ currentData, onApplyTemplate }: Templa
     }
   }, [onApplyTemplate])
 
-  // 保存当前配置为模板
+  const resetSaveDialog = useCallback(() => {
+    setTemplateName('')
+    setTemplateDescription('')
+    setShowSaveDialog(false)
+    setOverwriteConfirmName(null)
+  }, [])
+
+  // 尝试保存：检测重名，若重名进入覆盖确认流程
   const handleSaveTemplate = useCallback(() => {
     if (!templateName.trim()) {
       alert('请输入模板名称')
       return
     }
 
+    const trimmedName = templateName.trim()
+    const existing = userTemplates.find(t => t.name.trim() === trimmedName)
+    if (existing) {
+      setOverwriteConfirmName(trimmedName)
+      return
+    }
+
     const newTemplate: Template = {
       id: `user-${Date.now()}`,
-      name: templateName.trim(),
+      name: trimmedName,
       description: templateDescription.trim() || undefined,
       data: currentData,
       isPreset: false,
       createdAt: Date.now()
     }
 
-    const updatedTemplates = [...userTemplates, newTemplate]
+    saveTemplates([...userTemplates, newTemplate])
+    resetSaveDialog()
+    showToast('模板已保存')
+  }, [templateName, templateDescription, currentData, userTemplates, saveTemplates, resetSaveDialog, showToast])
+
+  // 确认覆盖：保留原 id/createdAt，更新 data 和 description
+  const handleConfirmOverwrite = useCallback(() => {
+    if (!overwriteConfirmName) return
+
+    const updatedTemplates = userTemplates.map(t =>
+      t.name.trim() === overwriteConfirmName
+        ? { ...t, data: currentData, description: templateDescription.trim() || undefined }
+        : t
+    )
     saveTemplates(updatedTemplates)
-    
-    setTemplateName('')
-    setTemplateDescription('')
-    setShowSaveDialog(false)
-    alert('模板保存成功！')
-  }, [templateName, templateDescription, currentData, userTemplates, saveTemplates])
+    setOverwriteConfirmName(null)
+    resetSaveDialog()
+    showToast('模板已更新')
+  }, [overwriteConfirmName, userTemplates, currentData, templateDescription, saveTemplates, resetSaveDialog, showToast])
 
   // 删除模板
   const handleDeleteTemplate = useCallback((templateId: string) => {
@@ -482,11 +506,7 @@ export default function TemplateManager({ currentData, onApplyTemplate }: Templa
               <span className="template-save-dialog-title">保存为模板</span>
               <button
                 className="template-save-dialog-close"
-                onClick={() => {
-                  setShowSaveDialog(false)
-                  setTemplateName('')
-                  setTemplateDescription('')
-                }}
+                onClick={resetSaveDialog}
               >
                 <CloseIcon size={16} />
               </button>
@@ -517,21 +537,39 @@ export default function TemplateManager({ currentData, onApplyTemplate }: Templa
                 />
               </div>
             </div>
+            {overwriteConfirmName && (
+              <div className="template-overwrite-confirm">
+                <div className="template-overwrite-confirm-text">
+                  已存在同名模板「{overwriteConfirmName}」，是否覆盖？
+                </div>
+                <div className="template-overwrite-confirm-actions">
+                  <button
+                    className="template-overwrite-confirm-no"
+                    onClick={() => setOverwriteConfirmName(null)}
+                  >
+                    取消
+                  </button>
+                  <button
+                    className="template-overwrite-confirm-yes"
+                    onClick={handleConfirmOverwrite}
+                  >
+                    覆盖保存
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="template-save-dialog-footer">
               <button
                 className="btn btn-secondary"
-                onClick={() => {
-                  setShowSaveDialog(false)
-                  setTemplateName('')
-                  setTemplateDescription('')
-                }}
+                onClick={resetSaveDialog}
+                disabled={!!overwriteConfirmName}
               >
                 取消
               </button>
               <button
                 className="btn btn-primary"
                 onClick={handleSaveTemplate}
-                disabled={!templateName.trim()}
+                disabled={!templateName.trim() || !!overwriteConfirmName}
               >
                 保存
               </button>

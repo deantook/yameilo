@@ -352,3 +352,53 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.template-overwrite-confirm {
+  padding: var(--space-3) var(--space-5);
+  background: var(--accent-attention-bg);
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.template-overwrite-confirm-text {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  line-height: var(--lh-regular);
+}
+
+.template-overwrite-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.template-overwrite-confirm-yes,
+.template-overwrite-confirm-no {
+  padding: 4px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: background-color var(--speed-quick) var(--ease);
+}
+
+.template-overwrite-confirm-yes {
+  background: var(--accent-attention);
+  color: var(--on-accent);
+}
+.template-overwrite-confirm-yes:hover {
+  background: var(--accent-attention-hover);
+}
+
+.template-overwrite-confirm-no {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+.template-overwrite-confirm-no:hover {
+  background: var(--bg-active);
+}
