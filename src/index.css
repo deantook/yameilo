@@ -1,27 +1,52 @@
-/* ===== Design Tokens — Linear-aligned ===== */
+/* ===== Design Tokens — Catppuccin (Latte light / Mocha dark) ===== */
 
 :root {
-  /* Light theme — restrained mirror of Linear dark-first */
-  --bg-canvas: #f7f9f9;
-  --bg-surface: #ffffff;
-  --bg-surface-raised: #ffffff;
-  --bg-hover: rgba(0, 0, 0, 0.04);
-  --bg-active: rgba(0, 0, 0, 0.08);
+  /* Light theme — Catppuccin Latte */
+  --bg-canvas: #eff1f5;        /* Base */
+  --bg-surface: #e6e9ef;       /* Mantle */
+  --bg-surface-raised: #ccd0da; /* Surface0 */
+  --bg-hover: color-mix(in srgb, #4c4f69 6%, transparent);
+  --bg-active: color-mix(in srgb, #4c4f69 10%, transparent);
 
-  --text-primary: #000000;
-  --text-secondary: #425364;
-  --text-tertiary: #8b98a5;
+  --text-primary: #4c4f69;     /* Text */
+  --text-secondary: #5c5f77;   /* Subtext1 */
+  --text-tertiary: #6c6f85;    /* Subtext0 */
 
-  --border: rgba(0, 0, 0, 0.08);
-  --border-strong: rgba(0, 0, 0, 0.14);
+  --border: color-mix(in srgb, #4c4f69 12%, transparent);
+  --border-strong: color-mix(in srgb, #4c4f69 20%, transparent);
 
-  --accent-primary: #1d9bf0;
-  --accent-primary-hover: #1a8cd8;
-  --accent-success: #00ba7c;
-  --accent-attention: #f91880;
-  --accent-ai: #6bc9fb;
+  /* Accents — Catppuccin Latte palette */
+  --accent-primary: #1e66f5;       /* Blue */
+  --accent-primary-hover: #209fb5; /* Sapphire */
+  --accent-success: #40a02b;       /* Green */
+  --accent-attention: #d20f39;     /* Red */
+  --accent-ai: #04a5e5;            /* Sky */
+  --accent-brand: #8839ef;         /* Mauve — Catppuccin signature */
+  --accent-brand-hover: #7287fd;   /* Lavender */
 
-  --overlay-strong: rgba(0, 0, 0, 0.20);
+  /* Text on top of accent fills — accents are dark in Latte, so use white */
+  --on-accent: #ffffff;
+  --on-accent-muted: #eff1f5;
+
+  --overlay-strong: color-mix(in srgb, #4c4f69 22%, transparent);
+
+  /* Derived alpha tokens (theme-aware via color-mix) */
+  --focus-ring: color-mix(in srgb, var(--accent-primary) 24%, transparent);
+  --accent-primary-bg: color-mix(in srgb, var(--accent-primary) 13%, transparent);
+  --accent-primary-border: color-mix(in srgb, var(--accent-primary) 26%, transparent);
+  --accent-primary-border-strong: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+  --accent-success-bg: color-mix(in srgb, var(--accent-success) 14%, transparent);
+  --accent-success-border: color-mix(in srgb, var(--accent-success) 28%, transparent);
+  --accent-success-hover: color-mix(in srgb, var(--accent-success) 86%, #000000);
+  --accent-attention-bg: color-mix(in srgb, var(--accent-attention) 12%, transparent);
+  --accent-attention-bg-strong: color-mix(in srgb, var(--accent-attention) 18%, transparent);
+  --accent-attention-border: color-mix(in srgb, var(--accent-attention) 26%, transparent);
+  --accent-attention-border-strong: color-mix(in srgb, var(--accent-attention) 45%, transparent);
+  --accent-attention-hover: color-mix(in srgb, var(--accent-attention) 86%, #000000);
+  --accent-ai-bg: color-mix(in srgb, var(--accent-ai) 18%, transparent);
+  --accent-ai-bg-strong: color-mix(in srgb, var(--accent-ai) 32%, transparent);
+  --accent-brand-bg: color-mix(in srgb, var(--accent-brand) 14%, transparent);
+  --accent-brand-border: color-mix(in srgb, var(--accent-brand) 28%, transparent);
 
   /* Typography */
   --font-sans: 'InterVariable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -68,20 +93,34 @@
 }
 
 [data-theme="dark"] {
-  --bg-canvas: #08090a;
-  --bg-surface: #0d0e10;
-  --bg-surface-raised: #111316;
-  --bg-hover: rgba(255, 255, 255, 0.06);
-  --bg-active: rgba(255, 255, 255, 0.10);
+  /* Dark theme — Catppuccin Mocha */
+  --bg-canvas: #1e1e2e;        /* Base */
+  --bg-surface: #181825;       /* Mantle */
+  --bg-surface-raised: #313244; /* Surface0 */
+  --bg-hover: color-mix(in srgb, #cdd6f4 6%, transparent);
+  --bg-active: color-mix(in srgb, #cdd6f4 10%, transparent);
 
-  --text-primary: #ffffff;
-  --text-secondary: #829aab;
-  --text-tertiary: #425364;
+  --text-primary: #cdd6f4;     /* Text */
+  --text-secondary: #bac2de;   /* Subtext1 */
+  --text-tertiary: #a6adc8;    /* Subtext0 */
 
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.14);
+  --border: color-mix(in srgb, #cdd6f4 12%, transparent);
+  --border-strong: color-mix(in srgb, #cdd6f4 20%, transparent);
 
-  --overlay-strong: rgba(0, 0, 0, 0.20);
+  /* Accents — Catppuccin Mocha palette (lighter so fills need dark text) */
+  --accent-primary: #89b4fa;       /* Blue */
+  --accent-primary-hover: #74c7ec; /* Sapphire */
+  --accent-success: #a6e3a1;       /* Green */
+  --accent-attention: #f38ba8;     /* Red */
+  --accent-ai: #89dceb;            /* Sky */
+  --accent-brand: #cba6f7;         /* Mauve */
+  --accent-brand-hover: #b4befe;   /* Lavender */
+
+  /* Accents are light in Mocha — use Base as on-accent text for contrast */
+  --on-accent: #1e1e2e;
+  --on-accent-muted: #181825;
+
+  --overlay-strong: color-mix(in srgb, #000000 45%, transparent);
 }
 
 * {

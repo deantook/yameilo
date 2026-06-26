@@ -28,29 +28,22 @@
 
 .btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.16);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .btn-primary {
-  background: #000000;
-  color: #ffffff;
-  border-color: #000000;
+  background: var(--accent-brand);
+  color: var(--on-accent);
+  border-color: var(--accent-brand);
 }
 .btn-primary:hover {
-  background: rgba(0, 0, 0, 0.88);
-}
-[data-theme="dark"] .btn-primary {
-  background: #ffffff;
-  color: #000000;
-  border-color: #ffffff;
-}
-[data-theme="dark"] .btn-primary:hover {
-  background: rgba(255, 255, 255, 0.88);
+  background: var(--accent-brand-hover);
+  border-color: var(--accent-brand-hover);
 }
 
 .btn-accent {
   background: var(--accent-primary);
-  color: #ffffff;
+  color: var(--on-accent);
   border-color: var(--accent-primary);
 }
 .btn-accent:hover {
@@ -79,11 +72,11 @@
 .btn-danger {
   background: transparent;
   color: var(--accent-attention);
-  border-color: rgba(249, 24, 128, 0.3);
+  border-color: var(--accent-attention-border);
 }
 .btn-danger:hover {
-  background: rgba(249, 24, 128, 0.1);
-  border-color: rgba(249, 24, 128, 0.5);
+  background: var(--accent-attention-bg);
+  border-color: var(--accent-attention-border-strong);
 }
 
 .btn-icon {
@@ -134,7 +127,7 @@
 .input:focus-visible {
   outline: none;
   border-color: var(--accent-primary);
-  box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.16);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 .input-readonly,
 .input[readonly] {
@@ -173,24 +166,24 @@
   border-color: var(--border);
 }
 .chip-blue {
-  background: rgba(29, 155, 240, 0.12);
+  background: var(--accent-primary-bg);
   color: var(--accent-primary);
-  border-color: rgba(29, 155, 240, 0.24);
+  border-color: var(--accent-primary-border);
 }
 .chip-green {
-  background: rgba(0, 186, 124, 0.12);
+  background: var(--accent-success-bg);
   color: var(--accent-success);
-  border-color: rgba(0, 186, 124, 0.24);
+  border-color: var(--accent-success-border);
 }
 .chip-pink {
-  background: rgba(249, 24, 128, 0.12);
+  background: var(--accent-attention-bg);
   color: var(--accent-attention);
-  border-color: rgba(249, 24, 128, 0.24);
+  border-color: var(--accent-attention-border);
 }
 .chip-cyan {
-  background: rgba(107, 201, 251, 0.14);
+  background: var(--accent-ai-bg);
   color: var(--accent-ai);
-  border-color: rgba(107, 201, 251, 0.28);
+  border-color: var(--accent-ai-bg-strong);
 }
 
 /* Toolbar */

@@ -82,9 +82,9 @@
 .template-save-btn {
   width: 100%;
   padding: 8px 12px;
-  background: #000000;
-  color: #ffffff;
-  border: 1px solid #000000;
+  background: var(--accent-brand);
+  color: var(--on-accent);
+  border: 1px solid var(--accent-brand);
   border-radius: var(--radius-sm);
   font-family: var(--font-sans);
   font-size: var(--text-sm);
@@ -94,18 +94,12 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  transition: background-color var(--speed-quick) var(--ease);
+  transition: background-color var(--speed-quick) var(--ease),
+    border-color var(--speed-quick) var(--ease);
 }
 .template-save-btn:hover {
-  background: rgba(0, 0, 0, 0.88);
-}
-[data-theme="dark"] .template-save-btn {
-  background: #ffffff;
-  color: #000000;
-  border-color: #ffffff;
-}
-[data-theme="dark"] .template-save-btn:hover {
-  background: rgba(255, 255, 255, 0.88);
+  background: var(--accent-brand-hover);
+  border-color: var(--accent-brand-hover);
 }
 
 .template-item {
@@ -162,7 +156,7 @@
 .template-item-apply {
   padding: 4px 10px;
   background: var(--accent-primary);
-  color: #ffffff;
+  color: var(--on-accent);
   border: 1px solid var(--accent-primary);
   border-radius: var(--radius-sm);
   font-family: var(--font-sans);
@@ -191,7 +185,7 @@
     color var(--speed-quick) var(--ease);
 }
 .template-item-delete:hover {
-  background: rgba(249, 24, 128, 0.1);
+  background: var(--accent-attention-bg);
   color: var(--accent-attention);
 }
 
@@ -214,10 +208,10 @@
 
 .template-delete-yes {
   background: var(--accent-attention);
-  color: #ffffff;
+  color: var(--on-accent);
 }
 .template-delete-yes:hover {
-  background: #d4146b;
+  background: var(--accent-attention-hover);
 }
 
 .template-delete-no {
@@ -335,7 +329,7 @@
 .template-save-field textarea:focus {
   outline: none;
   border-color: var(--accent-primary);
-  box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.16);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .template-save-field textarea {

@@ -51,7 +51,7 @@
 .form-input:focus {
   outline: none;
   border-color: var(--accent-primary);
-  box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.16);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .form-input.readonly {
@@ -91,7 +91,7 @@
 
 .toggle-option.active {
   background: var(--accent-primary);
-  color: #ffffff;
+  color: var(--on-accent);
 }
 
 /* Nested level guides */
@@ -264,7 +264,7 @@
 .key-input:focus {
   outline: none;
   border-color: var(--accent-primary);
-  box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.16);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 /* Array index chip */
@@ -275,8 +275,8 @@
   min-width: 45px;
   font-size: var(--text-xs);
   padding: 1px 8px;
-  background: rgba(29, 155, 240, 0.12);
-  border: 1px solid rgba(29, 155, 240, 0.24);
+  background: var(--accent-primary-bg);
+  border: 1px solid var(--accent-primary-border);
   border-radius: var(--radius-pill);
   text-align: center;
 }
@@ -353,7 +353,7 @@
 }
 
 .delete-btn:hover {
-  background: rgba(249, 24, 128, 0.1);
+  background: var(--accent-attention-bg);
   color: var(--accent-attention);
 }
 
@@ -371,7 +371,7 @@
   margin-top: var(--space-2);
   padding: 6px 12px;
   background: var(--accent-success);
-  color: #ffffff;
+  color: var(--on-accent);
   border: 1px solid var(--accent-success);
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -386,8 +386,8 @@
 }
 
 .add-btn:hover {
-  background: #00a06b;
-  border-color: #00a06b;
+  background: var(--accent-success-hover);
+  border-color: var(--accent-success-hover);
 }
 
 .add-btn svg {
@@ -413,7 +413,7 @@
 }
 
 .add-btn-icon:hover {
-  background: rgba(0, 186, 124, 0.12);
+  background: var(--accent-success-bg);
   color: var(--accent-success);
 }
 
@@ -545,7 +545,7 @@
 
 /* Search highlight */
 .search-highlight {
-  background: rgba(107, 201, 251, 0.3);
+  background: var(--accent-ai-bg-strong);
   color: var(--text-primary);
   padding: 1px 4px;
   border-radius: var(--radius-xs);
@@ -568,7 +568,7 @@
 }
 
 .search-match-input {
-  background-color: rgba(107, 201, 251, 0.18) !important;
+  background-color: var(--accent-ai-bg) !important;
   border-color: var(--accent-ai) !important;
 }
 
@@ -592,8 +592,8 @@
 /* Path highlight (locate) */
 .path-highlighted {
   position: relative;
-  background-color: rgba(29, 155, 240, 0.16) !important;
-  border: 1px solid rgba(29, 155, 240, 0.4) !important;
+  background-color: var(--accent-primary-bg) !important;
+  border: 1px solid var(--accent-primary-border-strong) !important;
   border-radius: var(--radius-sm);
   padding: var(--space-1);
   margin: -1px;
@@ -654,7 +654,7 @@
   top: var(--space-5);
   right: var(--space-5);
   background: var(--accent-success);
-  color: #ffffff;
+  color: var(--on-accent);
   padding: var(--space-3) var(--space-5);
   border-radius: var(--radius-sm);
   z-index: 10000;

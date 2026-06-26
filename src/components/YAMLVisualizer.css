@@ -74,16 +74,16 @@
 
 .file-name-input:focus {
   border-color: var(--accent-primary);
-  box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.16);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .parse-error {
   display: inline-flex;
   align-items: center;
   padding: 2px 8px;
-  background: rgba(249, 24, 128, 0.12);
+  background: var(--accent-attention-bg);
   color: var(--accent-attention);
-  border: 1px solid rgba(249, 24, 128, 0.24);
+  border: 1px solid var(--accent-attention-border);
   border-radius: var(--radius-pill);
   font-family: var(--font-sans);
   font-size: var(--text-xs);
@@ -144,7 +144,7 @@
 
 .search-container:focus-within {
   border-color: var(--accent-primary);
-  box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.16);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .search-icon {
@@ -192,7 +192,7 @@
 .search-count {
   padding: 1px 6px;
   background: var(--accent-primary);
-  color: #ffffff;
+  color: var(--on-accent);
   border-radius: var(--radius-pill);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
