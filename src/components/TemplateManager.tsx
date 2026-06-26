@@ -239,6 +239,8 @@ export default function TemplateManager({ currentData, onApplyTemplate }: Templa
   const [templateDescription, setTemplateDescription] = useState('')
   const [userTemplates, setUserTemplates] = useState<Template[]>([])
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
+  const [toastMessage, setToastMessage] = useState<string>('')
+  const toastTimeoutRef = useRef<number | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const saveDialogRef = useRef<HTMLDivElement>(null)
 
@@ -263,6 +265,27 @@ export default function TemplateManager({ currentData, onApplyTemplate }: Templa
       alert('保存模板失败，可能是存储空间不足')
     }
   }, [])
+
+  const showToast = useCallback((message: string) => {
+    setToastMessage(message)
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current)
+    }
+    toastTimeoutRef.current = window.setTimeout(() => {
+      setToastMessage('')
+      toastTimeoutRef.current = null
+    }, 2000)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  void showToast
 
   // 应用模板
   const handleApplyTemplate = useCallback((template: Template) => {
@@ -514,6 +537,11 @@ export default function TemplateManager({ currentData, onApplyTemplate }: Templa
               </button>
             </div>
           </div>
+        </div>
+      )}
+      {toastMessage && (
+        <div className="toast-message">
+          {toastMessage}
         </div>
       )}
     </>
