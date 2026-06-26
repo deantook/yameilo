@@ -1,49 +1,87 @@
+/* ===== Design Tokens — Linear-aligned ===== */
+
 :root {
-  /* 亮色主题变量 - 现代清新风格 */
-  --bg-primary: #ffffff;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #f1f5f9;
-  --bg-hover: #e2e8f0;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-tertiary: #94a3b8;
-  --border-color: #e2e8f0;
-  --primary-color: #3b82f6;
-  --primary-hover: #2563eb;
-  --secondary-color: #64748b;
-  --secondary-hover: #475569;
-  --error-bg: #fef2f2;
-  --error-border: #fecaca;
-  --error-text: #ef4444;
-  --shadow: rgba(15, 23, 42, 0.08);
-  --success-color: #10b981;
-  --success-hover: #059669;
-  --warning-color: #f59e0b;
-  --warning-hover: #d97706;
+  /* Light theme — restrained mirror of Linear dark-first */
+  --bg-canvas: #f7f9f9;
+  --bg-surface: #ffffff;
+  --bg-surface-raised: #ffffff;
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-active: rgba(0, 0, 0, 0.08);
+
+  --text-primary: #000000;
+  --text-secondary: #425364;
+  --text-tertiary: #8b98a5;
+
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
+
+  --accent-primary: #1d9bf0;
+  --accent-primary-hover: #1a8cd8;
+  --accent-success: #00ba7c;
+  --accent-attention: #f91880;
+  --accent-ai: #6bc9fb;
+
+  --overlay-strong: rgba(0, 0, 0, 0.20);
+
+  /* Typography */
+  --font-sans: 'InterVariable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', Consolas, Monaco, 'Courier New', monospace;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 15px;
+  --title-3: 16px;
+  --title-2: 20px;
+  --title-1: 24px;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  --lh-tight: 1.25;
+  --lh-regular: 1.5;
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* Radius */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+
+  /* Motion */
+  --speed-quick: 120ms;
+  --speed-regular: 200ms;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 [data-theme="dark"] {
-  /* 暗色主题变量 - VS Code Dark+ 风格 */
-  --bg-primary: #1e1e1e;
-  --bg-secondary: #1e1e1e;
-  --bg-tertiary: #252526;
-  --bg-hover: #2d2d30;
-  --text-primary: #d4d4d4;
-  --text-secondary: #9cdcfe;
-  --text-tertiary: #858585;
-  --border-color: #3e3e42;
-  --primary-color: #4fc3f7;
-  --primary-hover: #29b6f6;
-  --secondary-color: #858585;
-  --secondary-hover: #6c6c6c;
-  --error-bg: #3a1f1f;
-  --error-border: #5a2a2a;
-  --error-text: #f48771;
-  --shadow: rgba(0, 0, 0, 0.6);
-  --success-color: #4ade80;
-  --success-hover: #22c55e;
-  --warning-color: #fbbf24;
-  --warning-hover: #f59e0b;
+  --bg-canvas: #08090a;
+  --bg-surface: #0d0e10;
+  --bg-surface-raised: #111316;
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-active: rgba(255, 255, 255, 0.10);
+
+  --text-primary: #ffffff;
+  --text-secondary: #829aab;
+  --text-tertiary: #425364;
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  --overlay-strong: rgba(0, 0, 0, 0.20);
 }
 
 * {
@@ -53,18 +91,29 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--lh-regular);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: var(--bg-primary);
+  background: var(--bg-canvas);
   min-height: 100vh;
   color: var(--text-primary);
-  transition: background 0.3s ease, color 0.3s ease;
+  transition: background-color var(--speed-regular) var(--ease),
+    color var(--speed-regular) var(--ease);
 }
 
 #root {
   min-height: 100vh;
+  background: var(--bg-canvas);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
