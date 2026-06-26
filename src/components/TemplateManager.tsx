@@ -224,6 +224,9 @@ const PRESET_TEMPLATES: Template[] = [
 
 const STORAGE_KEY = 'yameilo-templates'
 
+const sortByCreatedAtDesc = (templates: Template[]): Template[] =>
+  [...templates].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+
 interface TemplateManagerProps {
   currentData: any
   onApplyTemplate: (data: any) => void
@@ -245,7 +248,7 @@ export default function TemplateManager({ currentData, onApplyTemplate }: Templa
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
         const templates = JSON.parse(saved) as Template[]
-        setUserTemplates(templates)
+        setUserTemplates(sortByCreatedAtDesc(templates))
       }
     } catch (error) {
     }
@@ -255,7 +258,7 @@ export default function TemplateManager({ currentData, onApplyTemplate }: Templa
   const saveTemplates = useCallback((templates: Template[]) => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(templates))
-      setUserTemplates(templates)
+      setUserTemplates(sortByCreatedAtDesc(templates))
     } catch (error) {
       alert('保存模板失败，可能是存储空间不足')
     }
