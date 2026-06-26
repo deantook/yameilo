@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { ThemeProvider } from './contexts/ThemeContext'
 import YAMLVisualizer from './components/YAMLVisualizer'
-import './App.css'
 
 function App() {
   const [yamlData, setYamlData] = useState<any>({})
