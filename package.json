@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "^5.2.8",
     "@iarna/toml": "^2.2.5",
     "@monaco-editor/react": "^4.6.0",
     "js-yaml": "^4.1.0",
