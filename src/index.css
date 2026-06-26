@@ -65,24 +65,6 @@
   --speed-quick: 120ms;
   --speed-regular: 200ms;
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
-
-  /* Legacy aliases (transitional — removed in cleanup phase) */
-  --bg-primary: var(--bg-canvas);
-  --bg-secondary: var(--bg-surface);
-  --bg-tertiary: var(--bg-surface-raised);
-  --primary-color: var(--accent-primary);
-  --primary-hover: var(--accent-primary-hover);
-  --secondary-color: var(--text-secondary);
-  --secondary-hover: var(--text-tertiary);
-  --border-color: var(--border);
-  --error-bg: rgba(249, 24, 128, 0.10);
-  --error-border: rgba(249, 24, 128, 0.24);
-  --error-text: var(--accent-attention);
-  --success-color: var(--accent-success);
-  --success-hover: #00a06b;
-  --warning-color: var(--accent-ai);
-  --warning-hover: #4ab8f0;
-  --shadow: transparent;
 }
 
 [data-theme="dark"] {
@@ -100,9 +82,6 @@
   --border-strong: rgba(255, 255, 255, 0.14);
 
   --overlay-strong: rgba(0, 0, 0, 0.20);
-
-  --error-bg: rgba(249, 24, 128, 0.12);
-  --error-border: rgba(249, 24, 128, 0.28);
 }
 
 * {
