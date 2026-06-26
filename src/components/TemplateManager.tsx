@@ -227,10 +227,9 @@ const STORAGE_KEY = 'yameilo-templates'
 interface TemplateManagerProps {
   currentData: any
   onApplyTemplate: (data: any) => void
-  onSaveAsTemplate?: (name: string, description: string, data: any) => void
 }
 
-export default function TemplateManager({ currentData, onApplyTemplate, onSaveAsTemplate }: TemplateManagerProps) {
+export default function TemplateManager({ currentData, onApplyTemplate }: TemplateManagerProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [templateName, setTemplateName] = useState('')
@@ -350,17 +349,15 @@ export default function TemplateManager({ currentData, onApplyTemplate, onSaveAs
             
             <div className="template-menu-content">
               {/* 保存当前配置为模板 */}
-              {onSaveAsTemplate && (
-                <div className="template-section">
-                  <button
-                    className="template-save-btn"
-                    onClick={() => setShowSaveDialog(true)}
-                  >
-                    <PlusIcon size={14} />
-                    <span>保存当前配置为模板</span>
-                  </button>
-                </div>
-              )}
+              <div className="template-section">
+                <button
+                  className="template-save-btn"
+                  onClick={() => setShowSaveDialog(true)}
+                >
+                  <PlusIcon size={14} />
+                  <span>保存当前配置为模板</span>
+                </button>
+              </div>
 
               {/* 预设模板 */}
               {PRESET_TEMPLATES.length > 0 && (
