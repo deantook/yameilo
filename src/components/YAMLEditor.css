@@ -4,7 +4,6 @@
   height: 100%;
   background: var(--bg-canvas);
   overflow: hidden;
-  transition: background-color var(--speed-regular) var(--ease);
 }
 
 .yaml-editor .monaco-editor {
@@ -14,5 +13,4 @@
 
 .yaml-editor .monaco-editor .margin {
   background-color: var(--bg-canvas);
-  transition: background-color var(--speed-regular) var(--ease);
 }
