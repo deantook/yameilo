@@ -252,6 +252,67 @@ const YAMLEditor = forwardRef<YAMLEditorHandle, YAMLEditorProps>(
     const handleEditorDidMount: OnMount = (editor: any, monaco: any) => {
       editorRef.current = editor
 
+      // 注册对齐 Linear 风格的自定义 Monaco 主题
+      monaco.editor.defineTheme('yameilo-dark', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '425364', fontStyle: 'italic' },
+          { token: 'string', foreground: '6bc9fb' },
+          { token: 'number', foreground: '00ba7c' },
+          { token: 'keyword', foreground: '1d9bf0' },
+          { token: 'key', foreground: '829aab' },
+          { token: 'type', foreground: 'f91880' },
+        ],
+        colors: {
+          'editor.background': '#08090a',
+          'editor.foreground': '#ffffff',
+          'editorLineNumber.foreground': '#425364',
+          'editorLineNumber.activeForeground': '#829aab',
+          'editor.selectionBackground': '#1d9bf033',
+          'editor.lineHighlightBackground': '#ffffff08',
+          'editorCursor.foreground': '#1d9bf0',
+          'editorWhitespace.foreground': '#ffffff14',
+          'editorIndentGuide.background': '#ffffff0a',
+          'editorIndentGuide.activeBackground': '#ffffff1a',
+          'editorError.foreground': '#f91880',
+          'editorWarning.foreground': '#6bc9fb',
+          'editorGutter.background': '#08090a',
+          'scrollbarSlider.background': '#ffffff14',
+          'scrollbarSlider.hoverBackground': '#ffffff1a',
+        },
+      })
+
+      monaco.editor.defineTheme('yameilo-light', {
+        base: 'vs',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '8b98a5', fontStyle: 'italic' },
+          { token: 'string', foreground: '0e8bb0' },
+          { token: 'number', foreground: '008f5d' },
+          { token: 'keyword', foreground: '1a8cd8' },
+          { token: 'key', foreground: '425364' },
+          { token: 'type', foreground: 'd4146b' },
+        ],
+        colors: {
+          'editor.background': '#f7f9f9',
+          'editor.foreground': '#000000',
+          'editorLineNumber.foreground': '#8b98a5',
+          'editorLineNumber.activeForeground': '#425364',
+          'editor.selectionBackground': '#1d9bf033',
+          'editor.lineHighlightBackground': '#00000008',
+          'editorCursor.foreground': '#1d9bf0',
+          'editorWhitespace.foreground': '#00000014',
+          'editorIndentGuide.background': '#0000000a',
+          'editorIndentGuide.activeBackground': '#0000001a',
+          'editorError.foreground': '#f91880',
+          'editorWarning.foreground': '#1a8cd8',
+          'editorGutter.background': '#f7f9f9',
+          'scrollbarSlider.background': '#00000014',
+          'scrollbarSlider.hoverBackground': '#0000001a',
+        },
+      })
+
       // 配置 YAML 语言支持
       monaco.languages.setLanguageConfiguration('yaml', {
         comments: {
@@ -416,7 +477,7 @@ const YAMLEditor = forwardRef<YAMLEditorHandle, YAMLEditorProps>(
           value={value}
           onChange={handleEditorChange}
           onMount={handleEditorDidMount}
-          theme={theme === 'dark' ? 'vs-dark' : 'vs'}
+          theme={theme === 'dark' ? 'yameilo-dark' : 'yameilo-light'}
           options={{
             minimap: { enabled: false },
             scrollBeyondLastLine: false,
