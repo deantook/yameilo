@@ -1,7 +1,7 @@
 import { useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react'
 import Editor from '@monaco-editor/react'
 import * as YAML from 'yaml'
-import type { OnChange, OnMount } from '@monaco-editor/react'
+import type { BeforeMount, OnChange, OnMount } from '@monaco-editor/react'
 import './YAMLEditor.css'
 
 interface YAMLEditorProps {
@@ -249,10 +249,9 @@ const YAMLEditor = forwardRef<YAMLEditorHandle, YAMLEditorProps>(
       }
     }, []) // 不依赖 value，因为从编辑器获取
 
-    const handleEditorDidMount: OnMount = (editor: any, monaco: any) => {
-      editorRef.current = editor
-
-      // 注册对齐 Linear 风格的自定义 Monaco 主题
+    const handleEditorWillMount: BeforeMount = (monaco: any) => {
+      // 在编辑器创建之前注册主题，确保 theme prop 应用时主题已存在
+      // （否则首次加载暗色时会回退到默认 vs 亮色主题）
       monaco.editor.defineTheme('yameilo-dark', {
         base: 'vs-dark',
         inherit: true,
@@ -312,6 +311,10 @@ const YAMLEditor = forwardRef<YAMLEditorHandle, YAMLEditorProps>(
           'scrollbarSlider.hoverBackground': '#0000001a',
         },
       })
+    }
+
+    const handleEditorDidMount: OnMount = (editor: any, monaco: any) => {
+      editorRef.current = editor
 
       // 配置 YAML 语言支持
       monaco.languages.setLanguageConfiguration('yaml', {
@@ -476,6 +479,7 @@ const YAMLEditor = forwardRef<YAMLEditorHandle, YAMLEditorProps>(
           defaultLanguage="yaml"
           value={value}
           onChange={handleEditorChange}
+          beforeMount={handleEditorWillMount}
           onMount={handleEditorDidMount}
           theme={theme === 'dark' ? 'yameilo-dark' : 'yameilo-light'}
           options={{
