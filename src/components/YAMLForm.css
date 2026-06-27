@@ -15,6 +15,7 @@
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   line-height: var(--lh-regular);
+  height: 32px;
   flex: 1;
   max-width: 400px;
   background: var(--bg-surface);
@@ -251,6 +252,7 @@
   font-size: var(--text-xs);
   font-weight: var(--fw-semibold);
   color: var(--text-primary);
+  height: 32px;
   min-width: 100px;
   background: var(--bg-surface);
   transition: border-color var(--speed-quick) var(--ease),
