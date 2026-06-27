@@ -31,6 +31,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     
     // 更新根元素的 data-theme 属性
     document.documentElement.setAttribute('data-theme', theme)
+
+    // 同步 favicon：根据当前主题启用对应的 ico 链接
+    const lightLink = document.querySelector<HTMLLinkElement>('link[rel="icon"][href*="yaml_light.ico"]')
+    const darkLink = document.querySelector<HTMLLinkElement>('link[rel="icon"][href*="yaml_dark.ico"]')
+    if (lightLink && darkLink) {
+      lightLink.media = theme === 'light' ? 'all' : 'not all'
+      darkLink.media = theme === 'dark' ? 'all' : 'not all'
+    }
   }, [theme])
 
   const toggleTheme = () => {

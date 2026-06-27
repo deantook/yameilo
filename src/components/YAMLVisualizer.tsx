@@ -849,7 +849,7 @@ export default function YAMLVisualizer({
       <div className="yaml-visualizer">
         <div className="toolbar">
           <div className="toolbar-left">
-            <img src={`${import.meta.env.BASE_URL}yaml.ico`} className="file-icon" alt="YAML" style={{ width: 16, height: 16 }} />
+            <img src={`${import.meta.env.BASE_URL}${theme === 'dark' ? 'yaml_dark.ico' : 'yaml_light.ico'}`} className="file-icon" alt="YAML" style={{ width: 16, height: 16 }} />
             {isEditingFileName ? (
               <input
                 ref={fileNameInputRef}
