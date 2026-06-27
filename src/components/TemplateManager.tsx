@@ -424,13 +424,6 @@ export default function TemplateManager({ currentData, onApplyTemplate }: Templa
                         )}
                       </div>
                       <div className="template-item-actions">
-                        <button
-                          className="template-item-apply"
-                          onClick={() => handleApplyTemplate(template)}
-                          title="应用模板"
-                        >
-                          应用
-                        </button>
                         {showDeleteConfirm === template.id ? (
                           <div className="template-delete-confirm">
                             <button
@@ -455,6 +448,13 @@ export default function TemplateManager({ currentData, onApplyTemplate }: Templa
                             <DeleteIcon size={14} />
                           </button>
                         )}
+                        <button
+                          className="template-item-apply"
+                          onClick={() => handleApplyTemplate(template)}
+                          title="应用模板"
+                        >
+                          应用
+                        </button>
                       </div>
                     </div>
                   ))}
